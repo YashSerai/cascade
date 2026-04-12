@@ -31,7 +31,7 @@ export const seededBrief: MissionBrief = {
     "Meeting notes repeatedly mention users getting lost between first sign-up and first value. A guided onboarding journey creates the fastest visual improvement and addresses the repeated friction directly.",
   confidence: 0.86,
   painPoints: [
-    "New users don’t know what step unlocks value first.",
+    "New users do not know what step unlocks value first.",
     "Support calls repeatedly explain the same setup sequence.",
     "There is no visible progress or reset path."
   ],
@@ -45,10 +45,10 @@ export const seededBrief: MissionBrief = {
   implementationBrief:
     "Introduce a mission-style onboarding ribbon, a reset action, and visual proof points so the product feels guided instead of static.",
   modelSelection: {
-    requestedModel: "gemini-3-pro-preview",
-    fallbackModel: "gemini-2.5-pro",
-    attemptedModels: ["gemini-3-pro-preview"],
-    activeModel: "gemini-3-pro-preview",
+    requestedModel: "gemini-3.1-pro-preview",
+    fallbackModel: "gemini-3-pro-preview",
+    attemptedModels: ["gemini-3.1-pro-preview"],
+    activeModel: "gemini-3.1-pro-preview",
     fallbackUsed: false,
     keyMode: "server"
   }

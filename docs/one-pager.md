@@ -44,8 +44,8 @@ Cascade turns a public repo and product intent into a visible mission.
 
 ## Gemini Usage
 
-- Primary model: `gemini-3-pro-preview`
-- Fallback model: `gemini-2.5-pro`
+- Primary model: `gemini-3.1-pro-preview`
+- Fallback chain: `gemini-3-pro-preview`, then `gemini-2.5-pro`
 - BYOK supported in the open-source flow
 - Server-side key supported for hosted hackathon judging
 

@@ -23,7 +23,7 @@ Most coding agents start after the decision has already been made. Cascade sits 
 - React + TypeScript frontend
 - Express + TypeScript API
 - Gemini analysis and execution planning on the server
-- `gemini-3-pro-preview` by default, `gemini-2.5-pro` fallback
+- `gemini-3.1-pro-preview` by default, then `gemini-3-pro-preview`, then `gemini-2.5-pro`
 - Cloud Run deployment target
 - BYOK support in the UI for open-source/self-hosted usage
 

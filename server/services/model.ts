@@ -2,8 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import type { KeyMode, ModelSelection } from "../../shared/types";
 
-export const PRIMARY_MODEL = "gemini-3-pro-preview";
-export const FALLBACK_MODEL = "gemini-2.5-pro";
+export const PRIMARY_MODEL = "gemini-3.1-pro-preview";
+export const FALLBACK_MODEL = "gemini-3-pro-preview";
+export const SAFETY_MODEL = "gemini-2.5-pro";
 
 export function resolveApiKey(providedApiKey?: string) {
   const userKey = providedApiKey?.trim();
@@ -41,7 +42,7 @@ export async function generateStructuredJson<T>(input: {
   const ai = new GoogleGenAI({ apiKey: input.apiKey });
   let lastError: unknown;
 
-  for (const model of [PRIMARY_MODEL, FALLBACK_MODEL]) {
+  for (const model of [PRIMARY_MODEL, FALLBACK_MODEL, SAFETY_MODEL]) {
     attemptedModels.push(model);
     try {
       const response = await ai.models.generateContent({

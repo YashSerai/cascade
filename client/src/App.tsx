@@ -13,7 +13,7 @@ const stageLabels: Record<MissionRun["stage"], string> = {
   mission_blocked: "Mission Blocked"
 };
 
-const stageOrder: MissionRun["stage"][] = [
+const stageOrder: Exclude<MissionRun["stage"], "mission_blocked">[] = [
   "objective_received",
   "recon",
   "plan_locked",
@@ -21,6 +21,29 @@ const stageOrder: MissionRun["stage"][] = [
   "verification",
   "proof_delivered"
 ];
+
+const stageDescriptions: Record<Exclude<MissionRun["stage"], "mission_blocked">, string> = {
+  objective_received: "Signal converted into a concrete mission target.",
+  recon: "Repo shape, framework, and likely impact zones are mapped.",
+  plan_locked: "The route is chosen and the acceptance bar is fixed.",
+  execution_underway: "The active patch is moving through the repo surface.",
+  verification: "Checks and proof are gathered before the reveal.",
+  proof_delivered: "Exports unlock and the mission lands with evidence."
+};
+
+const agentNames: Record<AgentRole, string> = {
+  pm: "Pathfinder",
+  architect: "Cartographer",
+  executor: "Maker",
+  qa: "Sentinel"
+};
+
+const agentAccents: Record<AgentRole, string> = {
+  pm: "dawn",
+  architect: "tide",
+  executor: "ember",
+  qa: "mint"
+};
 
 export default function App() {
   const [mode, setMode] = useState<MissionMode>("discover");
@@ -53,13 +76,18 @@ export default function App() {
   const visibleMission = activeMission ?? seededMission;
   const visibleBrief = brief ?? activeMission?.brief ?? seededBrief;
   const promptLabel = mode === "discover" ? "Feedback, meeting notes, or customer pain" : "Feature request or bug to implement";
+  const modelLabel = visibleBrief.modelSelection.activeModel ?? visibleBrief.modelSelection.requestedModel ?? "heuristic mode";
+  const historyVisible = history.length > 0 ? history : [seededMission];
+  const currentStageIndex =
+    visibleMission.stage === "mission_blocked" ? stageOrder.indexOf("verification") : stageOrder.indexOf(visibleMission.stage);
 
   const missionProgress = useMemo(() => {
-    const index = stageOrder.indexOf(visibleMission.stage);
     if (visibleMission.stage === "mission_blocked") {
-      return 92;
+      return 86;
     }
-    return Math.max(10, ((index + 1) / stageOrder.length) * 100);
+
+    const index = stageOrder.indexOf(visibleMission.stage);
+    return Math.max(12, ((index + 1) / stageOrder.length) * 100);
   }, [visibleMission.stage]);
 
   async function handleAnalyze() {
@@ -102,6 +130,7 @@ export default function App() {
     if (!activeMission) {
       return;
     }
+
     const content = await getContinuePrompt(activeMission.id);
     setContinuePrompt(content);
     setShowContinuePrompt(true);
@@ -114,22 +143,55 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <div className="ambient-grid" />
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Cascade</p>
-          <h1>Turn repo intent into a visible mission.</h1>
+      <div className="aurora aurora-left" />
+      <div className="aurora aurora-right" />
+      <div className="terrain-noise" />
+
+      <header className="masthead">
+        <div className="masthead-copy">
+          <p className="eyebrow">Cascade / mission control</p>
+          <h1>Guide a repo through a visual adventure, not a terminal transcript.</h1>
+          <p className="hero-copy">
+            Paste a public GitHub repo or file URL, add product signal or a direct request, and watch the mission route narrow
+            toward proof.
+          </p>
+          <div className="badge-row">
+            <Badge>{modelLabel}</Badge>
+            <Badge>{visibleBrief.repoScan.supportLevel}</Badge>
+            <Badge>{visibleBrief.repoScan.framework}</Badge>
+            <Badge>Cloud Run live</Badge>
+          </div>
         </div>
-        <div className="topbar-badges">
-          <span>{visibleBrief.modelSelection.activeModel ?? "heuristic mode"}</span>
-          <span>{visibleBrief.repoScan.supportLevel}</span>
-          <span>Cloud Run ready</span>
-        </div>
+
+        <aside className="masthead-panel glass-card">
+          <p className="section-kicker">Current expedition</p>
+          <h2>{visibleBrief.selectedObjective}</h2>
+          <p>{visibleBrief.implementationBrief}</p>
+
+          <div className="progress-meter">
+            <div className="progress-meter-fill" style={{ width: `${missionProgress}%` }} />
+          </div>
+
+          <div className="meter-grid">
+            <Stat label="Active stage" value={stageLabels[visibleMission.stage]} />
+            <Stat label="Confidence" value={`${Math.round(visibleBrief.confidence * 100)}%`} />
+            <Stat label="Target repo" value={`${visibleBrief.repoTarget.owner}/${visibleBrief.repoTarget.repo}`} />
+            <Stat label="Key mode" value={visibleBrief.modelSelection.keyMode} />
+          </div>
+        </aside>
       </header>
 
-      <main className="workspace">
-        <section className="left-rail panel">
-          <div className="mode-switch">
+      <main className="experience-grid">
+        <section className="intake-card glass-card">
+          <div className="section-header">
+            <div>
+              <p className="section-kicker">Mission intake</p>
+              <h2>Choose the signal source and launch the route.</h2>
+            </div>
+            <div className="support-pill">{visibleBrief.repoScan.supportReason}</div>
+          </div>
+
+          <div className="mode-toggle">
             {(["discover", "mission"] as const).map((item) => (
               <button
                 key={item}
@@ -137,7 +199,8 @@ export default function App() {
                 className={item === mode ? "active" : ""}
                 onClick={() => setMode(item)}
               >
-                {item === "discover" ? "Discover Mode" : "Mission Mode"}
+                <span>{item === "discover" ? "Discover" : "Mission"}</span>
+                <small>{item === "discover" ? "Turn notes into a chosen feature" : "Drive a direct fix or feature"}</small>
               </button>
             ))}
           </div>
@@ -152,7 +215,7 @@ export default function App() {
             <textarea
               value={promptText}
               onChange={(event) => setPromptText(event.target.value)}
-              rows={9}
+              rows={8}
               placeholder="Paste customer feedback, meeting notes, or a direct implementation request."
             />
           </label>
@@ -163,37 +226,46 @@ export default function App() {
               type="password"
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
-              placeholder="Falls back to server-side key if configured."
+              placeholder="Hosted demos can use the server key. OSS users can bring their own."
             />
           </label>
 
           <div className="action-row">
-            <button type="button" className="primary" onClick={handleAnalyze} disabled={busyState !== "idle"}>
-              {busyState === "analyzing" ? "Analyzing..." : "Analyze Repo"}
+            <button type="button" className="primary-button" onClick={handleAnalyze} disabled={busyState !== "idle"}>
+              {busyState === "analyzing" ? "Charting route..." : "Analyze Repo"}
             </button>
-            <button type="button" className="secondary" onClick={handleLaunch} disabled={!brief || busyState !== "idle"}>
-              {busyState === "launching" ? "Launching..." : "Launch Mission"}
+            <button type="button" className="secondary-button" onClick={handleLaunch} disabled={!brief || busyState !== "idle"}>
+              {busyState === "launching" ? "Launching mission..." : "Launch Mission"}
             </button>
           </div>
 
           {error ? <p className="error-message">{error}</p> : null}
 
-          <div className="brief-card">
-            <p className="section-kicker">Selected objective</p>
-            <h2>{visibleBrief.selectedObjective}</h2>
+          <div className="objective-card">
+            <p className="section-kicker">Chosen destination</p>
+            <h3>{visibleBrief.selectedObjective}</h3>
             <p>{visibleBrief.rationale}</p>
-            <ul className="chip-list">
-              {visibleBrief.impactedAreas.slice(0, 5).map((area) => (
-                <li key={area}>{area}</li>
-              ))}
-            </ul>
+
+            <div className="list-block">
+              <span>Acceptance criteria</span>
+              <ul>
+                {visibleBrief.acceptanceCriteria.slice(0, 3).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
           </div>
 
-          <div className="brief-card subtle">
-            <p className="section-kicker">Candidate features</p>
-            <div className="candidate-list">
+          <div className="candidate-card">
+            <div className="section-header compact">
+              <div>
+                <p className="section-kicker">Alternate routes</p>
+                <h3>Try another mission</h3>
+              </div>
+            </div>
+            <div className="candidate-grid">
               {visibleBrief.candidateFeatures.map((feature) => (
-                <button key={feature} type="button" className="candidate-chip" onClick={() => loadAlternateFeature(feature)}>
+                <button key={feature} type="button" className="candidate-button" onClick={() => loadAlternateFeature(feature)}>
                   {feature}
                 </button>
               ))}
@@ -201,110 +273,140 @@ export default function App() {
           </div>
         </section>
 
-        <section className="mission-canvas panel">
-          <div className="mission-header">
+        <section className="map-card glass-card">
+          <div className="section-header">
             <div>
-              <p className="section-kicker">Mission map</p>
+              <p className="section-kicker">Adventure map</p>
               <h2>{visibleBrief.missionTitle}</h2>
             </div>
-            <div className="progress-pill">{Math.round(missionProgress)}% resolved</div>
+            <div className={`stage-chip ${visibleMission.stage === "mission_blocked" ? "blocked" : ""}`}>
+              {stageLabels[visibleMission.stage]}
+            </div>
           </div>
 
-          <div className="terrain">
-            <div className="terrain-wash" />
-            <div className="stage-track">
-              {stageOrder.map((stage, index) => {
-                const currentIndex = stageOrder.indexOf(visibleMission.stage);
-                const complete = currentIndex > index || visibleMission.stage === "proof_delivered";
-                const active = visibleMission.stage === stage;
-                return (
-                  <div key={stage} className={`stage-node ${complete ? "complete" : ""} ${active ? "active" : ""}`}>
-                    <span>{index + 1}</span>
-                    <strong>{stageLabels[stage]}</strong>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="destination-grid">
+            <article className="destination-card">
+              <p className="section-kicker">Destination</p>
+              <h3>{visibleBrief.selectedObjective}</h3>
+              <p>{visibleBrief.implementationBrief}</p>
+              <div className="badge-row soft">
+                {visibleBrief.impactedAreas.slice(0, 4).map((area) => (
+                  <Badge key={area}>{area}</Badge>
+                ))}
+              </div>
+            </article>
 
-            <div className="terrain-zones">
-              <ZoneCard title="Signal Basin" copy={visibleBrief.painPoints[0] ?? "Customer signal will appear here."} />
-              <ZoneCard title="Plan Ridge" copy={visibleBrief.implementationBrief} />
-              <ZoneCard
-                title="Proof Harbor"
-                copy={
-                  visibleMission.stage === "mission_blocked"
-                    ? "Blockers surfaced, but the mission stays honest and exportable."
-                    : visibleMission.artifacts.summary
-                }
+            <article className="intel-card">
+              <div className="intel-row">
+                <span>Repo anchor</span>
+                <strong>{visibleBrief.repoTarget.targetPath ?? "whole repo"}</strong>
+              </div>
+              <div className="intel-row">
+                <span>Support lane</span>
+                <strong>{visibleBrief.repoScan.supportLevel}</strong>
+              </div>
+              <div className="intel-row">
+                <span>Verifier</span>
+                <strong>{visibleBrief.repoScan.buildCommand ?? visibleBrief.repoScan.testCommand ?? "Advisory only"}</strong>
+              </div>
+            </article>
+          </div>
+
+          <div className="expedition-map">
+            <div className="journey-line" />
+            {stageOrder.map((stage, index) => (
+              <LandmarkCard
+                key={stage}
+                stage={stage}
+                index={index}
+                currentStageIndex={currentStageIndex}
+                blocked={visibleMission.stage === "mission_blocked"}
               />
-            </div>
-
-            <div className="agent-orbit">
-              {(["pm", "architect", "executor", "qa"] as AgentRole[]).map((role) => (
-                <div key={role} className={`agent-token ${visibleMission.agents[role].status}`}>
-                  <span>{role.toUpperCase()}</span>
-                  <small>{visibleMission.agents[role].progress}%</small>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="timeline">
-            {visibleMission.artifacts.logs.slice(-5).reverse().map((log) => (
-              <article key={`${log.timestamp}-${log.message}`} className={`timeline-entry ${log.level}`}>
-                <time>{new Date(log.timestamp).toLocaleTimeString()}</time>
-                <p>{log.message}</p>
-              </article>
             ))}
-          </div>
-        </section>
 
-        <section className="right-rail panel">
-          <div className="agent-grid">
+            <div className="proof-orb">
+              <p className="section-kicker">Mission pulse</p>
+              <strong>{Math.round(missionProgress)}%</strong>
+              <span>{visibleMission.stage === "mission_blocked" ? "Route interrupted, proof preserved" : "Route converging on proof"}</span>
+            </div>
+          </div>
+
+          <div className="agent-fleet">
             {(["pm", "architect", "executor", "qa"] as AgentRole[]).map((role) => (
               <AgentCard key={role} role={role} mission={visibleMission} />
             ))}
           </div>
 
-          <div className="proof-header">
-            <div>
-              <p className="section-kicker">Proof bundle</p>
-              <h2>{visibleMission.stage === "mission_blocked" ? "Mission blocked" : "Mission proof"}</h2>
+          <div className="log-deck">
+            <div className="section-header compact">
+              <div>
+                <p className="section-kicker">Route chatter</p>
+                <h3>Latest mission events</h3>
+              </div>
             </div>
-            <div className="button-row">
-              {activeMission ? (
-                <>
-                  <a className="ghost-button" href={`/api/missions/${activeMission.id}/brief.md`}>
-                    Download Brief
-                  </a>
-                  <button type="button" className="ghost-button" onClick={handleOpenContinuePrompt}>
-                    Continue Working
-                  </button>
-                </>
-              ) : null}
+            <div className="log-list">
+              {visibleMission.artifacts.logs.slice(-4).reverse().map((log) => (
+                <article key={`${log.timestamp}-${log.message}`} className={`log-entry ${log.level}`}>
+                  <time>{new Date(log.timestamp).toLocaleTimeString()}</time>
+                  <p>{log.message}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <aside className="proof-card glass-card">
+          <div className="section-header">
+            <div>
+              <p className="section-kicker">Proof chamber</p>
+              <h2>{visibleMission.stage === "mission_blocked" ? "Blocker-aware proof" : "Evidence and handoff"}</h2>
             </div>
           </div>
 
-          <div className="stack">
-            <ArtifactCard title="Impacted areas" items={visibleBrief.impactedAreas} />
-            <ArtifactCard
-              title="Changed files"
-              items={visibleMission.artifacts.changedFiles.map((file) => `${file.path} — ${file.summary}`)}
-              empty="No changed files yet."
-            />
-            <ArtifactCard
-              title="Checks"
-              items={visibleMission.artifacts.checks.map((check) => `${check.name}: ${check.status}`)}
-              empty="Verification will appear here."
-            />
-            <ArtifactCard title="Next steps" items={visibleMission.artifacts.nextSteps} empty="Next steps unlock after execution." />
+          <div className="proof-summary">
+            <p>{visibleMission.artifacts.summary}</p>
+            <div className="proof-metrics">
+              <MetricCard label="Changed files" value={String(visibleMission.artifacts.changedFiles.length)} />
+              <MetricCard label="Checks" value={String(visibleMission.artifacts.checks.length)} />
+              <MetricCard label="Pain points" value={String(visibleBrief.painPoints.length)} />
+              <MetricCard label="Model" value={modelLabel} compact />
+            </div>
           </div>
+
+          <div className="button-column">
+            {activeMission ? (
+              <>
+                <a className="secondary-button full" href={`/api/missions/${activeMission.id}/brief.md`}>
+                  Download Brief
+                </a>
+                <button type="button" className="primary-button full" onClick={handleOpenContinuePrompt}>
+                  Continue Working
+                </button>
+              </>
+            ) : (
+              <div className="empty-state">
+                Launch a live mission to unlock downloadable proof and continuation prompts.
+              </div>
+            )}
+          </div>
+
+          <ArtifactCard title="Impacted areas" items={visibleBrief.impactedAreas} />
+          <ArtifactCard
+            title="Changed files"
+            items={visibleMission.artifacts.changedFiles.map((file) => `${file.path} - ${file.summary}`)}
+            empty="No changed files yet."
+          />
+          <ArtifactCard
+            title="Checks"
+            items={visibleMission.artifacts.checks.map((check) => `${check.name}: ${check.status}`)}
+            empty="Verification will appear here."
+          />
+          <ArtifactCard title="Next steps" items={visibleMission.artifacts.nextSteps} empty="Next steps unlock after execution." />
 
           <div className="history-card">
-            <p className="section-kicker">Mission history</p>
+            <p className="section-kicker">Mission ledger</p>
             <ul>
-              {history.length === 0 ? <li>Launch a real mission to start local history.</li> : null}
-              {history.map((mission) => (
+              {historyVisible.map((mission) => (
                 <li key={mission.id}>
                   <strong>{mission.brief.selectedObjective}</strong>
                   <span>{stageLabels[mission.stage]}</span>
@@ -312,25 +414,28 @@ export default function App() {
               ))}
             </ul>
           </div>
-        </section>
+        </aside>
       </main>
 
       {showContinuePrompt ? (
         <div className="modal-backdrop" onClick={() => setShowContinuePrompt(false)}>
           <div className="modal" onClick={(event) => event.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Continue Working Prompt</h2>
-              <button type="button" onClick={() => setShowContinuePrompt(false)}>
+            <div className="section-header compact">
+              <div>
+                <p className="section-kicker">Continue working</p>
+                <h2>Hand the route to another agent</h2>
+              </div>
+              <button type="button" className="modal-close" onClick={() => setShowContinuePrompt(false)}>
                 Close
               </button>
             </div>
             <textarea readOnly value={continuePrompt} rows={16} />
-            <div className="button-row">
-              <button type="button" className="primary" onClick={() => navigator.clipboard.writeText(continuePrompt)}>
+            <div className="action-row">
+              <button type="button" className="primary-button" onClick={() => navigator.clipboard.writeText(continuePrompt)}>
                 Copy Prompt
               </button>
               {activeMission ? (
-                <a className="ghost-button" href={`/api/missions/${activeMission.id}/continue.txt`}>
+                <a className="secondary-button" href={`/api/missions/${activeMission.id}/continue.txt`}>
                   Download .txt
                 </a>
               ) : null}
@@ -342,15 +447,40 @@ export default function App() {
   );
 }
 
+function LandmarkCard(props: {
+  stage: Exclude<MissionRun["stage"], "mission_blocked">;
+  index: number;
+  currentStageIndex: number;
+  blocked: boolean;
+}) {
+  const { stage, index, currentStageIndex, blocked } = props;
+  const state = blocked && index === currentStageIndex ? "blocked" : index < currentStageIndex ? "complete" : index === currentStageIndex ? "active" : "pending";
+
+  return (
+    <article className={`landmark-card ${state} landmark-${index + 1}`}>
+      <span className="landmark-index">0{index + 1}</span>
+      <h3>{stageLabels[stage]}</h3>
+      <p>{stageDescriptions[stage]}</p>
+    </article>
+  );
+}
+
 function AgentCard({ role, mission }: { role: AgentRole; mission: MissionRun }) {
   const agent = mission.agents[role];
+
   return (
-    <article className={`agent-card ${agent.status}`}>
-      <div className="agent-title">
-        <span>{role.toUpperCase()}</span>
+    <article className={`agent-card ${agent.status} ${agentAccents[role]}`}>
+      <div className="agent-topline">
+        <div>
+          <span className="agent-eyebrow">{agentNames[role]}</span>
+          <h3>{role.toUpperCase()}</h3>
+        </div>
         <strong>{agent.progress}%</strong>
       </div>
       <p>{agent.latestAction}</p>
+      <div className="agent-bar">
+        <div className="agent-bar-fill" style={{ width: `${agent.progress}%` }} />
+      </div>
     </article>
   );
 }
@@ -359,24 +489,38 @@ function ArtifactCard({ title, items, empty = "Nothing recorded yet." }: { title
   return (
     <article className="artifact-card">
       <h3>{title}</h3>
-      {items.length === 0 ? <p className="empty-copy">{empty}</p> : null}
       {items.length > 0 ? (
         <ul>
           {items.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
-      ) : null}
+      ) : (
+        <p className="empty-state">{empty}</p>
+      )}
     </article>
   );
 }
 
-function ZoneCard({ title, copy }: { title: string; copy: string }) {
+function Badge({ children }: { children: string }) {
+  return <span className="badge">{children}</span>;
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <article className="zone-card">
-      <h3>{title}</h3>
-      <p>{copy}</p>
-    </article>
+    <div className="stat-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function MetricCard({ label, value, compact = false }: { label: string; value: string; compact?: boolean }) {
+  return (
+    <div className={`metric-card ${compact ? "compact" : ""}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   );
 }
 
