@@ -9,6 +9,8 @@ interface PreludeProps {
 }
 
 export function Prelude({ brief, missionProgress, chapters, onStart }: PreludeProps) {
+  const previewChapters = [chapters[0], chapters[Math.min(2, chapters.length - 1)], chapters[chapters.length - 1]];
+
   return (
     <section className="prelude">
       <div className="prelude-copy">
@@ -51,12 +53,12 @@ export function Prelude({ brief, missionProgress, chapters, onStart }: PreludePr
           <div className="preview-heart">
             <span className="preview-heart-kicker">Mission core</span>
             <strong>{brief.selectedObjective}</strong>
-            <small>{brief.implementationBrief}</small>
+            <small>{previewChapters[1]?.pulse ?? brief.implementationBrief}</small>
           </div>
         </div>
 
         <div className="preview-rail">
-          {chapters.map((chapter) => (
+          {previewChapters.map((chapter) => (
             <article key={chapter.stage} className={`preview-chapter ${chapter.state}`}>
               <span>{chapter.chapter}</span>
               <small>{chapter.pulse}</small>

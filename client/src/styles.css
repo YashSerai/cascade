@@ -131,7 +131,7 @@ a {
 
 .prelude {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
+  grid-template-columns: minmax(0, 0.92fr) minmax(480px, 1.08fr);
   gap: 28px;
   align-items: stretch;
   margin-bottom: 32px;
@@ -264,13 +264,14 @@ a {
 
 .preview-core {
   position: relative;
-  min-height: 360px;
+  min-height: 420px;
   margin: 20px 0;
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.07);
   background:
     radial-gradient(circle at 50% 50%, rgba(116, 215, 255, 0.08), transparent 38%),
     linear-gradient(180deg, rgba(8, 12, 20, 0.75), rgba(8, 12, 20, 0.35));
+  overflow: hidden;
 }
 
 .preview-grid,
@@ -292,23 +293,20 @@ a {
 }
 
 .preview-ring-a {
-  inset: 50px;
+  inset: 44px 56px 60px;
 }
 
 .preview-ring-b {
-  inset: 100px;
+  inset: 102px 108px 112px;
 }
 
 .preview-heart,
 .mission-core {
   position: absolute;
-  top: 50%;
-  left: 50%;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transform: translate(-50%, -50%);
-  width: min(320px, calc(100% - 64px));
+  width: min(270px, calc(100% - 64px));
   padding: 24px;
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -319,17 +317,42 @@ a {
   text-align: center;
 }
 
+.preview-heart {
+  right: 42px;
+  bottom: 34px;
+}
+
+.mission-core {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .preview-heart strong,
 .mission-core strong {
   font-family: "Fraunces", serif;
-  font-size: 1.55rem;
-  line-height: 1.15;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  line-height: 1.08;
 }
 
 .preview-heart small,
 .mission-core small {
   color: var(--muted);
   line-height: 1.55;
+}
+
+.preview-heart strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.preview-heart small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .preview-heart-kicker,
@@ -359,26 +382,26 @@ a {
 
 .preview-orb-pm,
 .agent-pm {
-  top: 28px;
-  left: 20%;
+  top: 24px;
+  left: 17%;
 }
 
 .preview-orb-architect,
 .agent-architect {
-  top: 20%;
-  right: 12%;
+  top: 16%;
+  right: 9%;
 }
 
 .preview-orb-executor,
 .agent-executor {
   bottom: 14%;
-  right: 20%;
+  right: 28%;
 }
 
 .preview-orb-qa,
 .agent-qa {
-  bottom: 20%;
-  left: 14%;
+  bottom: 18%;
+  left: 12%;
 }
 
 .preview-orb-pm,
@@ -408,6 +431,10 @@ a {
   gap: 12px;
 }
 
+.preview-rail {
+  align-items: stretch;
+}
+
 .preview-chapter,
 .chapter-card,
 .story-card,
@@ -427,6 +454,10 @@ a {
 .preview-chapter,
 .chapter-card {
   padding: 14px;
+}
+
+.preview-chapter {
+  min-height: 120px;
 }
 
 .preview-chapter span,
@@ -1138,6 +1169,15 @@ a {
     padding: 18px;
   }
 
+  .section-heading,
+  .preview-header,
+  .readiness-header,
+  .proof-hero-header,
+  .drawer-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .preview-rail,
   .chapter-rail,
   .story-grid,
@@ -1174,6 +1214,11 @@ a {
     font-size: 3.1rem;
   }
 
+  .mode-switch,
+  .preview-rail {
+    grid-template-columns: 1fr;
+  }
+
   .preview-core,
   .constellation-field {
     min-height: 460px;
@@ -1183,6 +1228,11 @@ a {
   .preview-heart {
     width: min(280px, calc(100% - 32px));
     padding: 18px;
+  }
+
+  .preview-heart {
+    right: 18px;
+    bottom: 18px;
   }
 
   .preview-orb,
@@ -1210,8 +1260,8 @@ a {
 
   .preview-orb-executor,
   .agent-executor {
-    bottom: 12%;
-    right: 8%;
+    bottom: 16%;
+    right: 20%;
   }
 
   .preview-orb-qa,
