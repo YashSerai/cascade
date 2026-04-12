@@ -1,0 +1,21 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: cascade
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "1"
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      timeoutSeconds: 1800
+      containerConcurrency: 4
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT_ID/cascade/cascade:latest
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "8080"
