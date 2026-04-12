@@ -124,6 +124,7 @@ function buildAnalysisPrompt(input: {
     input.mode === "discover"
       ? "In Discover Mode, extract pain points, rank likely features, choose one mission, explain why, and keep acceptance criteria concrete."
       : "In Mission Mode, clarify the direct request into a mission title, objective, acceptance criteria, impacted areas, and an implementation brief.",
+    "Keep the copy tight and demo-ready. missionTitle: 8 words max with no brand prefix. selectedObjective: 10 words max. rationale: 2 short sentences max. Each pain point and acceptance criterion: 12 words max. implementationBrief: 18 words max.",
     "Avoid invented specifics such as database tables or files that are not grounded in the repo scan.",
     "Impacted areas can refer to file paths or subsystem names."
   ].join("\n");

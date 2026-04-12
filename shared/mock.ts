@@ -3,7 +3,7 @@ import type { MissionBrief, MissionRun } from "./types";
 const now = new Date().toISOString();
 
 export const seededBrief: MissionBrief = {
-  missionTitle: "Turn support churn into a guided onboarding mission",
+  missionTitle: "Onboarding needs a clearer route",
   mode: "discover",
   repoTarget: {
     inputUrl: "https://github.com/example/product-app",
@@ -26,24 +26,23 @@ export const seededBrief: MissionBrief = {
     rootScripts: ["dev", "build", "test"],
     targetPathHint: "src/App.tsx"
   },
-  selectedObjective: "Make onboarding progress visible and easier to restart",
+  selectedObjective: "Show progress and safe restart points",
   rationale:
-    "Meeting notes repeatedly mention users getting lost between first sign-up and first value. A guided onboarding journey creates the fastest visual improvement and addresses the repeated friction directly.",
+    "New users lose the thread between sign-up and first value. A visible path fixes the confusion fastest.",
   confidence: 0.86,
   painPoints: [
-    "New users do not know what step unlocks value first.",
-    "Support calls repeatedly explain the same setup sequence.",
-    "There is no visible progress or reset path."
+    "The first win is hard to spot.",
+    "Support repeats the same setup order.",
+    "Restarting drops users back into guesswork."
   ],
-  candidateFeatures: ["Guided onboarding mission", "Contextual setup checklist", "Reset and resume launcher"],
+  candidateFeatures: ["Guided onboarding path", "Resume-and-reset launcher", "Setup checklist with progress"],
   acceptanceCriteria: [
-    "Users can see the current onboarding stage at a glance.",
-    "Users can restart setup without losing orientation.",
-    "The onboarding surface visually matches the product brand."
+    "Users can spot the current step immediately.",
+    "Restarting setup keeps context.",
+    "The flow feels native to the product."
   ],
   impactedAreas: ["src/App.tsx", "navigation shell", "global styles"],
-  implementationBrief:
-    "Introduce a mission-style onboarding ribbon, a reset action, and visual proof points so the product feels guided instead of static.",
+  implementationBrief: "Add a step rail, restart action, and proof states.",
   modelSelection: {
     requestedModel: "gemini-3.1-pro-preview",
     fallbackModel: "gemini-3-pro-preview",
@@ -84,25 +83,23 @@ export const seededMission: MissionRun = {
   },
   artifacts: {
     executionPlan: {
-      approach:
-        "Tighten the hero copy, add mission progress chips, and stage the onboarding flow around three clear steps.",
+      approach: "Tighten the onboarding story, add progress states, and keep the handoff obvious.",
       targetFiles: ["src/App.tsx", "src/styles.css"],
       verificationStrategy: ["npm install --no-audit --no-fund", "npm run build"],
       notes: ["Keep the end-state visually obvious for a 60-second demo."]
     },
     changedFiles: [
-      { path: "src/App.tsx", summary: "Added the mission-driven onboarding surface and reset action." },
-      { path: "src/styles.css", summary: "Introduced terrain gradients, path lines, and verification states." }
+      { path: "src/App.tsx", summary: "Added the onboarding path and restart action." },
+      { path: "src/styles.css", summary: "Added progress states, route lines, and proof cues." }
     ],
     checks: [{ name: "build", status: "passed", command: "npm run build", output: "Build completed successfully in 4.2s." }],
     screenshots: [],
     logs: [
-      { timestamp: now, level: "info", message: "Recon complete. React/Vite project detected." },
-      { timestamp: now, level: "info", message: "Executor is applying a guided onboarding journey to the main UI." }
+      { timestamp: now, level: "info", message: "Recon complete. React/Vite repo detected." },
+      { timestamp: now, level: "info", message: "Executor is applying the onboarding path to the main UI." }
     ],
-    summary:
-      "Cascade reframed the ask into a visible onboarding mission, updated the main React surface, and verified the package build.",
+    summary: "Cascade reframed the ask, staged the onboarding flow, and verified the build.",
     blockers: [],
-    nextSteps: ["Capture a polished screenshot for the launch thread.", "Try the second candidate feature against the same repo."]
+    nextSteps: ["Capture a launch screenshot.", "Try the second route against the same repo."]
   }
 };

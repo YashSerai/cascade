@@ -32,10 +32,10 @@ export function MissionTheater({
       <div className="section-heading theater-heading">
         <div>
           <p className="section-tag">Mission Theater</p>
-          <h2>Watch the fix take shape.</h2>
+          <h2>Watch the run unfold.</h2>
         </div>
         <button type="button" className="secondary-button" onClick={onOpenTechnicalProof}>
-          Behind the scenes
+          Technical proof
         </button>
       </div>
 
@@ -47,15 +47,15 @@ export function MissionTheater({
 
           <div className="theater-stat-row">
             <div className="theater-stat">
-              <span>Working toward</span>
+              <span>Objective</span>
               <strong>{brief.selectedObjective}</strong>
             </div>
             <div className="theater-stat">
-              <span>Current scene</span>
+              <span>Scene</span>
               <strong>{stageInfo.chapter}</strong>
             </div>
             <div className="theater-stat">
-              <span>Main touchpoint</span>
+              <span>Surface</span>
               <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
             </div>
           </div>
@@ -83,8 +83,8 @@ export function MissionTheater({
           </article>
 
           <div className="signal-banner">
-            <span>What the audience should feel next</span>
-            <strong>{brief.acceptanceCriteria[0] ?? "The product should feel clearer and easier to trust."}</strong>
+            <span>What should feel different</span>
+            <strong>{brief.acceptanceCriteria[0] ?? "The product should feel clearer immediately."}</strong>
             <small>{stageInfo.pulse}</small>
           </div>
         </div>
@@ -99,10 +99,12 @@ export function MissionTheater({
               <line x1="500" y1="310" x2="210" y2="492" />
             </svg>
 
-            <div className="mission-core">
-              <span>Mission core</span>
-              <strong>{brief.selectedObjective}</strong>
-              <small>{brief.implementationBrief}</small>
+            <div className="mission-core-shell">
+              <div className="mission-core">
+                <span>Mission core</span>
+                <strong>{brief.selectedObjective}</strong>
+                <small>{brief.implementationBrief}</small>
+              </div>
             </div>
 
             {agentOrder.map((role) => {

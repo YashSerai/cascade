@@ -16,7 +16,7 @@ export function ContinueMissionModal({ content, missionId, open, onClose }: Cont
         <div className="drawer-header">
           <div>
             <p className="section-tag">Continue Working</p>
-            <h2>Hand the route to the next agent.</h2>
+            <h2>Pass the route forward.</h2>
           </div>
           <button type="button" className="secondary-button" onClick={onClose}>
             Close

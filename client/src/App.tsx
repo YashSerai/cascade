@@ -17,7 +17,7 @@ export default function App() {
   const [mode, setMode] = useState<MissionMode>("discover");
   const [repoUrl, setRepoUrl] = useState("https://github.com/vercel/satori");
   const [promptText, setPromptText] = useState(
-    "Customer feedback says the first-run experience is confusing. People want clearer onboarding, fewer dead ends, and a stronger sense of progress."
+    "First-run onboarding feels confusing. People need a clearer path, visible progress, and an easy restart."
   );
   const [apiKey, setApiKey] = useState("");
   const [brief, setBrief] = useState<MissionBrief | null>(null);

@@ -17,8 +17,8 @@ export function buildFallbackBrief(input: {
   const shortFeature = featureSeed.replace(/^[\-\*\d\.\)\s]+/, "").slice(0, 120);
   const candidateFeatures =
     input.mode === "discover"
-      ? [toTitle(shortFeature), `Improve ${input.repoScan.framework} onboarding`, "Clarify the first-run experience"]
-      : [toTitle(shortFeature), "Tighten the implementation surface", "Add verification and proof"];
+      ? [toTitle(shortFeature), "Guided first run", "Restart and resume flow"]
+      : [toTitle(shortFeature), "Tighten the main surface", "Add proof and verification"];
 
   const painPoints =
     input.mode === "discover"
@@ -36,14 +36,14 @@ export function buildFallbackBrief(input: {
   const acceptanceCriteria =
     input.mode === "discover"
       ? [
-          "The chosen feature clearly addresses the repeated customer signal.",
-          "The impacted files stay within the supported web surface when possible.",
-          "Proof includes changed files and at least one verification artifact."
+          "It solves the sharpest repeated signal.",
+          "It stays grounded in the detected repo surface.",
+          "It ends with at least one proof artifact."
         ]
       : [
-          `Implement the request: ${trimSentence(input.promptText)}.`,
-          "Keep the implementation aligned with the detected framework and scripts.",
-          "Return an honest proof bundle with blockers if the repo falls outside the supported lane."
+          `Ship: ${trimSentence(input.promptText)}.`,
+          "Match the detected framework and scripts.",
+          "Return proof or a clear blocker."
         ];
 
   const impactedAreas =
@@ -54,16 +54,16 @@ export function buildFallbackBrief(input: {
   return {
     missionTitle:
       input.mode === "discover"
-        ? `Cascade mission: ${candidateFeatures[0]}`
-        : `Cascade mission: ${toTitle(trimSentence(input.promptText).slice(0, 70) || "Implement the requested change")}`,
+        ? candidateFeatures[0]
+        : toTitle(trimSentence(input.promptText).slice(0, 70) || "Implement the requested change"),
     mode: input.mode,
     repoTarget: input.repoTarget,
     repoScan: input.repoScan,
     selectedObjective,
     rationale:
       input.mode === "discover"
-        ? "Cascade used a heuristic fallback because a Gemini key was unavailable or the model response was rejected. The chosen feature best matched the strongest repeated signal in the provided notes."
-        : "Cascade used a heuristic fallback to convert the direct request into a concrete implementation target while preserving repo-aware constraints.",
+        ? "Heuristic mode picked the clearest improvement from the provided signal because no accepted model output was available."
+        : "Heuristic mode turned the request into a concrete repo-aware change because no accepted model output was available.",
     confidence: input.mode === "discover" ? 0.62 : 0.67,
     painPoints,
     candidateFeatures,
@@ -71,8 +71,8 @@ export function buildFallbackBrief(input: {
     impactedAreas,
     implementationBrief:
       input.repoScan.supportLevel === "supported"
-        ? `Focus the mission on ${impactedAreas.join(", ")}. Plan a visible change, verify with the detected scripts, and package proof for handoff.`
-        : `Keep this mission in advisory mode. Analyze the repo, propose the safest execution path, and explain what would be required for a real run.`,
+        ? `Focus on ${impactedAreas.slice(0, 3).join(", ")}. Make the change visible, verify it, and package proof.`
+        : "Keep this run advisory. Map the safest route and spell out what live execution would need.",
     modelSelection: input.modelSelection
   };
 }
@@ -81,7 +81,7 @@ function toTitle(input: string) {
   return input
     .split(/\s+/)
     .filter(Boolean)
-    .slice(0, 8)
+    .slice(0, 6)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }

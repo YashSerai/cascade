@@ -15,11 +15,11 @@ export function Prelude({ brief, missionStage, missionProgress, onStart }: Prelu
   return (
     <section className="prelude">
       <div className="prelude-copy">
-        <p className="section-tag">Cascade / cinematic mission control</p>
-        <h1>Make the wait feel like the show.</h1>
+        <p className="section-tag">Cascade / live mission control</p>
+        <h1>Show the work while it ships.</h1>
         <p className="prelude-lead">
-          Cascade turns repo fixes and opportunity hunts into a front-row product experience. Users paste a repo, choose a
-          route, and watch the mission unfold as a cinematic journey instead of a dead terminal stare.
+          Cascade turns repo changes into a live product story. Drop in a repo, frame the ask, and let the room follow
+          progress without reading logs.
         </p>
 
         <button type="button" className="primary-button hero-button" onClick={onStart}>
@@ -27,9 +27,9 @@ export function Prelude({ brief, missionStage, missionProgress, onStart }: Prelu
         </button>
 
         <div className="prelude-pill-row">
-          <span className="signal-pill">Front-end storytelling</span>
-          <span className="signal-pill">Visible progress</span>
-          <span className="signal-pill">Demo-ready reveal</span>
+          <span className="signal-pill">Clear route</span>
+          <span className="signal-pill">Live progress</span>
+          <span className="signal-pill">Proof at handoff</span>
         </div>
       </div>
 
@@ -39,7 +39,7 @@ export function Prelude({ brief, missionStage, missionProgress, onStart }: Prelu
             <p className="section-tag muted">Mission Preview</p>
             <h2>{brief.missionTitle}</h2>
           </div>
-          <span className="preview-progress">Now in {currentChapterLabel}</span>
+          <span className="preview-progress">Now: {currentChapterLabel}</span>
         </div>
 
         <div className="preview-meter">
@@ -47,7 +47,7 @@ export function Prelude({ brief, missionStage, missionProgress, onStart }: Prelu
         </div>
 
         <div className="preview-summary">
-          <span className="preview-summary-kicker">What the audience is following</span>
+          <span className="preview-summary-kicker">Mission focus</span>
           <strong>{brief.selectedObjective}</strong>
           <p>{brief.implementationBrief}</p>
         </div>
@@ -60,10 +60,6 @@ export function Prelude({ brief, missionStage, missionProgress, onStart }: Prelu
             </article>
           ))}
         </div>
-
-        <p className="preview-note">
-          Cascade turns the waiting time into a guided story your audience can actually follow from first signal to final reveal.
-        </p>
       </div>
     </section>
   );

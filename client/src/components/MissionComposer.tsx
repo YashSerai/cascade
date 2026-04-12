@@ -47,10 +47,10 @@ export function MissionComposer(props: MissionComposerProps) {
       <div className="section-heading">
         <div>
           <p className="section-tag">Mission Composer</p>
-          <h2>Choose the lane, shape the ask, and stage the route.</h2>
+          <h2>Choose the lane and frame the ask.</h2>
         </div>
         <p className="section-intro">
-          This is where the product story gets locked: either find the smartest improvement or deliver one specific visible fix.
+          Use discovery when the signal is messy, or fix mode when the outcome is already known.
         </p>
       </div>
 
@@ -72,7 +72,7 @@ export function MissionComposer(props: MissionComposerProps) {
           </div>
 
           <label className="field">
-            <span>Public GitHub repo or file URL</span>
+            <span>GitHub repo or file URL</span>
             <input
               value={repoUrl}
               onChange={(event) => onRepoUrlChange(event.target.value)}
@@ -85,27 +85,27 @@ export function MissionComposer(props: MissionComposerProps) {
             <textarea
               value={promptText}
               onChange={(event) => onPromptChange(event.target.value)}
-              rows={8}
-              placeholder="Describe the feature, the bug, or the repeated user friction."
+              rows={7}
+              placeholder="Describe the product problem, feature, or bug."
             />
           </label>
 
           <label className="field">
-            <span>Bring your own Gemini key (optional)</span>
+            <span>Gemini key (optional)</span>
             <input
               type="password"
               value={apiKey}
               onChange={(event) => onApiKeyChange(event.target.value)}
-              placeholder="Leave blank to use the hosted demo lane when available."
+              placeholder="Leave blank to use the hosted lane when available."
             />
           </label>
 
           <div className="action-row">
             <button type="button" className="primary-button" onClick={onAnalyze} disabled={busyState !== "idle"}>
-              {busyState === "analyzing" ? "Charting the route..." : "Analyze the Mission"}
+              {busyState === "analyzing" ? "Reading the route..." : "Analyze route"}
             </button>
             <button type="button" className="secondary-button" onClick={onLaunch} disabled={!isLaunchReady || busyState !== "idle"}>
-              {busyState === "launching" ? "Opening the theater..." : "Launch the Theater"}
+              {busyState === "launching" ? "Starting the run..." : "Start live run"}
             </button>
           </div>
 
@@ -115,7 +115,7 @@ export function MissionComposer(props: MissionComposerProps) {
         <aside className="composer-readiness cinematic-panel">
           <div className="readiness-header">
             <div>
-              <p className="section-tag muted">{liveBrief ? "Route selected" : "Preview route"}</p>
+              <p className="section-tag muted">{liveBrief ? "Route locked" : "Route preview"}</p>
               <h3>{brief.selectedObjective}</h3>
             </div>
             <span className={`status-pill ${brief.repoScan.supportLevel}`}>{support.label}</span>
@@ -125,29 +125,29 @@ export function MissionComposer(props: MissionComposerProps) {
 
           <div className="readiness-grid">
             <div className="readiness-tile">
-              <span>Mission lane</span>
+              <span>Lane</span>
               <strong>{modeCopy.label}</strong>
               <small>{modeCopy.description}</small>
             </div>
             <div className="readiness-tile">
-              <span>Delivery path</span>
+              <span>Support</span>
               <strong>{support.label}</strong>
               <small>{support.body}</small>
             </div>
             <div className="readiness-tile">
-              <span>Main touchpoint</span>
+              <span>Primary surface</span>
               <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
-              <small>The change should feel most obvious here when the reveal lands.</small>
+              <small>This is where the change should read first.</small>
             </div>
             <div className="readiness-tile">
-              <span>Audience payoff</span>
-              <strong>{brief.acceptanceCriteria[0] ?? "The experience should feel clearer at a glance."}</strong>
-              <small>{brief.acceptanceCriteria[1] ?? "Cascade is aiming for a reveal that feels obvious, not technical."}</small>
+              <span>Payoff</span>
+              <strong>{brief.acceptanceCriteria[0] ?? "The result should feel clear at a glance."}</strong>
+              <small>{brief.acceptanceCriteria[1] ?? "The reveal should be obvious without reading a diff."}</small>
             </div>
           </div>
 
           <div className="readiness-block">
-            <span>Acceptance bar</span>
+            <span>Success looks like</span>
             <ul>
               {brief.acceptanceCriteria.slice(0, 3).map((item) => (
                 <li key={item}>{item}</li>
@@ -156,7 +156,7 @@ export function MissionComposer(props: MissionComposerProps) {
           </div>
 
           <div className="readiness-block">
-            <span>Other promising routes</span>
+            <span>Alternate routes</span>
             <div className="candidate-grid">
               {brief.candidateFeatures.map((feature) => (
                 <button key={feature} type="button" className="candidate-button" onClick={() => onSelectCandidate(feature)}>

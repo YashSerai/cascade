@@ -19,7 +19,7 @@ export function TechnicalProofDrawer({ brief, mission, open, onClose }: Technica
         <div className="drawer-header">
           <div>
             <p className="section-tag">Behind the Scenes</p>
-            <h2>The full mission record.</h2>
+            <h2>Full mission record.</h2>
           </div>
           <button type="button" className="secondary-button" onClick={onClose}>
             Close

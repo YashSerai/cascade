@@ -27,10 +27,10 @@ export function ProofVault({
       <div className="section-heading">
         <div>
           <p className="section-tag">Proof Vault</p>
-          <h2>Land the mission with confidence, not clutter.</h2>
+          <h2>Close the loop with proof.</h2>
         </div>
         <button type="button" className="secondary-button" onClick={onOpenTechnicalProof}>
-          Behind the scenes
+          Technical proof
         </button>
       </div>
 
@@ -38,11 +38,11 @@ export function ProofVault({
         <article className="proof-hero cinematic-panel">
           <div className="proof-hero-header">
             <div>
-              <p className="section-tag muted">{isLiveMission ? "Live mission outcome" : "Preview ending"}</p>
+              <p className="section-tag muted">{isLiveMission ? "Live outcome" : "Preview finish"}</p>
               <h3>{stageInfo.chapter}</h3>
             </div>
             <span className={`status-pill ${mission.stage === "mission_blocked" ? "blocked" : "supported"}`}>
-              {mission.stage === "mission_blocked" ? "Blocker captured" : "Proof packaged"}
+              {mission.stage === "mission_blocked" ? "Blocker logged" : "Proof ready"}
             </span>
           </div>
 
@@ -50,15 +50,15 @@ export function ProofVault({
 
           <div className="proof-metrics">
             <div className="metric-tile">
-              <span>Changed surfaces</span>
+              <span>Files touched</span>
               <strong>{mission.artifacts.changedFiles.length}</strong>
             </div>
             <div className="metric-tile">
-              <span>Verified moments</span>
+              <span>Checks passed</span>
               <strong>{passedChecks}</strong>
             </div>
             <div className="metric-tile">
-              <span>Audience pain points</span>
+              <span>Pain points</span>
               <strong>{brief.painPoints.length}</strong>
             </div>
             <div className="metric-tile">
@@ -71,23 +71,21 @@ export function ProofVault({
             {isLiveMission ? (
               <>
                 <a className="secondary-button full" href={`/api/missions/${activeMissionId}/brief.md`}>
-                  Download Mission Brief
+                  Download brief
                 </a>
                 <button type="button" className="primary-button full" onClick={onOpenContinuePrompt}>
-                  Continue the Mission
+                  Continue mission
                 </button>
               </>
             ) : (
-              <div className="empty-state">
-                Launch a live mission to unlock downloadable proof artifacts and the continuation handoff.
-              </div>
+              <div className="empty-state">Run a live mission to unlock the brief download and continue prompt.</div>
             )}
           </div>
         </article>
 
         <article className="proof-card cinematic-panel">
           <p className="section-tag muted">What changed</p>
-          <h3>Changed surfaces</h3>
+          <h3>Files touched</h3>
           <ul className="proof-list">
             {mission.artifacts.changedFiles.length > 0 ? (
               mission.artifacts.changedFiles.map((file) => (
@@ -104,7 +102,7 @@ export function ProofVault({
 
         <article className="proof-card cinematic-panel">
           <p className="section-tag muted">Why it matters</p>
-          <h3>Impact surfaces</h3>
+          <h3>Impact areas</h3>
           <ul className="proof-list">
             {brief.impactedAreas.map((area) => (
               <li key={area}>
@@ -116,7 +114,7 @@ export function ProofVault({
 
         <article className="proof-card cinematic-panel">
           <p className="section-tag muted">Verification</p>
-          <h3>Outcome checks</h3>
+          <h3>Checks</h3>
           <ul className="proof-list">
             {mission.artifacts.checks.length > 0 ? (
               mission.artifacts.checks.map((check) => (
@@ -133,7 +131,7 @@ export function ProofVault({
 
         <article className="proof-card cinematic-panel">
           <p className="section-tag muted">Next move</p>
-          <h3>Recommended next steps</h3>
+          <h3>Next steps</h3>
           <ul className="proof-list">
             {mission.artifacts.nextSteps.length > 0 ? (
               mission.artifacts.nextSteps.map((step) => (
@@ -150,7 +148,7 @@ export function ProofVault({
         {mission.artifacts.screenshots.length > 0 ? (
           <article className="proof-card cinematic-panel proof-card-wide">
             <p className="section-tag muted">Visual proof</p>
-            <h3>Screenshots</h3>
+            <h3>Captured screens</h3>
             <div className="screenshot-list">
               {mission.artifacts.screenshots.map((shot) => (
                 <a key={shot.url} className="screenshot-chip" href={shot.url}>
@@ -163,7 +161,7 @@ export function ProofVault({
 
         <article className="proof-card cinematic-panel proof-card-wide">
           <p className="section-tag muted">Mission ledger</p>
-          <h3>Recent runs</h3>
+          <h3>Recent missions</h3>
           <ul className="ledger-list">
             {history.map((entry) => (
               <li key={entry.id}>
