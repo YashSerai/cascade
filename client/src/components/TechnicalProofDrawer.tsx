@@ -18,8 +18,8 @@ export function TechnicalProofDrawer({ brief, mission, open, onClose }: Technica
       <aside className="proof-drawer" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog">
         <div className="drawer-header">
           <div>
-            <p className="section-tag">Technical Proof</p>
-            <h2>Everything behind the cinematic layer.</h2>
+            <p className="section-tag">Behind the Scenes</p>
+            <h2>The full mission record.</h2>
           </div>
           <button type="button" className="secondary-button" onClick={onClose}>
             Close

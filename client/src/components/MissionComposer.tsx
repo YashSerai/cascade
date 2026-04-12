@@ -1,5 +1,5 @@
 import type { MissionBrief, MissionMode } from "../../../shared/types";
-import { getModelLane, getSupportPresentation, modePresentation } from "../presentation";
+import { getSupportPresentation, humanizeSurfaceLabel, modePresentation } from "../presentation";
 
 interface MissionComposerProps {
   mode: MissionMode;
@@ -50,7 +50,7 @@ export function MissionComposer(props: MissionComposerProps) {
           <h2>Choose the lane, shape the ask, and stage the route.</h2>
         </div>
         <p className="section-intro">
-          This is where the user decides whether Cascade should scout for the best improvement or deliver one specific fix.
+          This is where the product story gets locked: either find the smartest improvement or deliver one specific visible fix.
         </p>
       </div>
 
@@ -91,7 +91,7 @@ export function MissionComposer(props: MissionComposerProps) {
           </label>
 
           <label className="field">
-            <span>Gemini API key for BYOK (optional)</span>
+            <span>Bring your own Gemini key (optional)</span>
             <input
               type="password"
               value={apiKey}
@@ -130,19 +130,19 @@ export function MissionComposer(props: MissionComposerProps) {
               <small>{modeCopy.description}</small>
             </div>
             <div className="readiness-tile">
-              <span>Execution mode</span>
+              <span>Delivery path</span>
               <strong>{support.label}</strong>
               <small>{support.body}</small>
             </div>
             <div className="readiness-tile">
-              <span>Model lane</span>
-              <strong>{getModelLane(brief)}</strong>
-              <small>{brief.modelSelection.attemptedModels.join(" -> ")}</small>
+              <span>Main touchpoint</span>
+              <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
+              <small>The change should feel most obvious here when the reveal lands.</small>
             </div>
             <div className="readiness-tile">
-              <span>Primary surface</span>
-              <strong>{brief.impactedAreas[0] ?? "Whole experience"}</strong>
-              <small>{brief.repoScan.targetPathHint ?? "Change surface will be confirmed during route selection."}</small>
+              <span>Audience payoff</span>
+              <strong>{brief.acceptanceCriteria[0] ?? "The experience should feel clearer at a glance."}</strong>
+              <small>{brief.acceptanceCriteria[1] ?? "Cascade is aiming for a reveal that feels obvious, not technical."}</small>
             </div>
           </div>
 

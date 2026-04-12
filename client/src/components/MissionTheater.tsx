@@ -1,43 +1,41 @@
-import type { MissionBrief, MissionRun } from "../../../shared/types";
+import type { AgentRole, MissionBrief, MissionRun } from "../../../shared/types";
 import {
   agentOrder,
-  agentPresentation,
-  formatTimeLabel,
-  getModelLabel,
+  getCrewSpotlight,
+  humanizeSurfaceLabel,
   stagePresentation,
-  type ChapterState,
-  type StoryMoment
+  type ChapterState
 } from "../presentation";
 
 interface MissionTheaterProps {
   brief: MissionBrief;
   mission: MissionRun;
-  missionProgress: number;
   chapters: ChapterState[];
-  storyMoments: StoryMoment[];
+  selectedCrewRole: AgentRole;
+  onSelectCrew: (role: AgentRole) => void;
   onOpenTechnicalProof: () => void;
 }
 
 export function MissionTheater({
   brief,
   mission,
-  missionProgress,
   chapters,
-  storyMoments,
+  selectedCrewRole,
+  onSelectCrew,
   onOpenTechnicalProof
 }: MissionTheaterProps) {
   const stageInfo = stagePresentation[mission.stage];
-  const latestLog = mission.artifacts.logs.at(-1);
+  const selectedCrew = getCrewSpotlight(selectedCrewRole, brief, mission);
 
   return (
     <section className="theater-section" id="mission-theater">
       <div className="section-heading theater-heading">
         <div>
           <p className="section-tag">Mission Theater</p>
-          <h2>The waiting room becomes the product moment.</h2>
+          <h2>Watch the fix take shape.</h2>
         </div>
         <button type="button" className="secondary-button" onClick={onOpenTechnicalProof}>
-          Open Technical Proof
+          Behind the scenes
         </button>
       </div>
 
@@ -49,66 +47,79 @@ export function MissionTheater({
 
           <div className="theater-stat-row">
             <div className="theater-stat">
-              <span>Objective</span>
+              <span>Working toward</span>
               <strong>{brief.selectedObjective}</strong>
             </div>
             <div className="theater-stat">
-              <span>Mission pulse</span>
-              <strong>{Math.round(missionProgress)}%</strong>
+              <span>Current scene</span>
+              <strong>{stageInfo.chapter}</strong>
             </div>
             <div className="theater-stat">
-              <span>Model</span>
-              <strong>{getModelLabel(brief)}</strong>
+              <span>Main touchpoint</span>
+              <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
             </div>
           </div>
 
-          <div className="story-grid">
-            {storyMoments.map((moment) => (
-              <article key={moment.eyebrow} className="story-card">
-                <span>{moment.eyebrow}</span>
-                <strong>{moment.title}</strong>
-                <p>{moment.body}</p>
+          <article className={`crew-focus ${selectedCrew.statusTone}`}>
+            <div className="crew-focus-header">
+              <div>
+                <span>{selectedCrew.statusLabel}</span>
+                <h4>{selectedCrew.name}</h4>
+              </div>
+            </div>
+
+            <p className="crew-focus-summary">{selectedCrew.summary}</p>
+
+            <div className="crew-focus-grid">
+              <article className="crew-focus-card">
+                <span>{selectedCrew.detailTitle}</span>
+                <p>{selectedCrew.detailBody}</p>
               </article>
-            ))}
-          </div>
+              <article className="crew-focus-card">
+                <span>{selectedCrew.audienceTitle}</span>
+                <p>{selectedCrew.audienceBody}</p>
+              </article>
+            </div>
+          </article>
 
           <div className="signal-banner">
-            <span>Latest pulse</span>
-            <strong>{latestLog ? latestLog.message : stageInfo.pulse}</strong>
-            <small>{latestLog ? formatTimeLabel(latestLog.timestamp) : "seeded preview"}</small>
+            <span>What the audience should feel next</span>
+            <strong>{brief.acceptanceCriteria[0] ?? "The product should feel clearer and easier to trust."}</strong>
+            <small>{stageInfo.pulse}</small>
           </div>
         </div>
 
         <div className="constellation-panel">
           <div className="constellation-field">
             <div className="constellation-grid" />
-            <div className="constellation-ring ring-outer" />
-            <div className="constellation-ring ring-inner" />
-            <div className="constellation-link link-pm" />
-            <div className="constellation-link link-architect" />
-            <div className="constellation-link link-executor" />
-            <div className="constellation-link link-qa" />
+            <svg className="journey-wireframe" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="500" y1="310" x2="190" y2="138" />
+              <line x1="500" y1="310" x2="808" y2="146" />
+              <line x1="500" y1="310" x2="770" y2="488" />
+              <line x1="500" y1="310" x2="210" y2="492" />
+            </svg>
 
             <div className="mission-core">
               <span>Mission core</span>
               <strong>{brief.selectedObjective}</strong>
-              <small>{stageInfo.pulse}</small>
+              <small>{brief.implementationBrief}</small>
             </div>
 
             {agentOrder.map((role) => {
-              const agent = mission.agents[role];
-              const info = agentPresentation[role];
-              const active = agent.status === "active" || agent.status === "blocked";
+              const spotlight = getCrewSpotlight(role, brief, mission);
+              const selected = role === selectedCrewRole;
 
               return (
-                <article
+                <button
                   key={role}
-                  className={`agent-node ${info.orbitClass} ${agent.status} ${active ? "active" : ""}`}
+                  type="button"
+                  className={`agent-node ${spotlight.statusTone} ${selected ? "selected" : ""} agent-${role}`}
+                  onClick={() => onSelectCrew(role)}
+                  aria-pressed={selected}
                 >
-                  <span>{info.roleLabel}</span>
-                  <strong>{info.name}</strong>
-                  <small>{agent.progress}%</small>
-                </article>
+                  <span className="agent-node-status">{spotlight.statusLabel}</span>
+                  <strong>{spotlight.name}</strong>
+                </button>
               );
             })}
           </div>

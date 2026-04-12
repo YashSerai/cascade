@@ -1,5 +1,5 @@
 import type { MissionBrief, MissionRun } from "../../../shared/types";
-import { formatTimeLabel, getModelLabel, stagePresentation } from "../presentation";
+import { formatTimeLabel, humanizeCheckName, humanizeCheckStatus, humanizeSurfaceLabel, stagePresentation } from "../presentation";
 
 interface ProofVaultProps {
   brief: MissionBrief;
@@ -30,7 +30,7 @@ export function ProofVault({
           <h2>Land the mission with confidence, not clutter.</h2>
         </div>
         <button type="button" className="secondary-button" onClick={onOpenTechnicalProof}>
-          View Technical Proof
+          Behind the scenes
         </button>
       </div>
 
@@ -54,16 +54,16 @@ export function ProofVault({
               <strong>{mission.artifacts.changedFiles.length}</strong>
             </div>
             <div className="metric-tile">
-              <span>Checks passed</span>
+              <span>Verified moments</span>
               <strong>{passedChecks}</strong>
             </div>
             <div className="metric-tile">
-              <span>User pain points</span>
+              <span>Audience pain points</span>
               <strong>{brief.painPoints.length}</strong>
             </div>
             <div className="metric-tile">
-              <span>Model</span>
-              <strong>{getModelLabel(brief)}</strong>
+              <span>Next steps</span>
+              <strong>{mission.artifacts.nextSteps.length}</strong>
             </div>
           </div>
 
@@ -71,10 +71,10 @@ export function ProofVault({
             {isLiveMission ? (
               <>
                 <a className="secondary-button full" href={`/api/missions/${activeMissionId}/brief.md`}>
-                  Download Brief
+                  Download Mission Brief
                 </a>
                 <button type="button" className="primary-button full" onClick={onOpenContinuePrompt}>
-                  Continue Working
+                  Continue the Mission
                 </button>
               </>
             ) : (
@@ -93,7 +93,7 @@ export function ProofVault({
               mission.artifacts.changedFiles.map((file) => (
                 <li key={file.path}>
                   <strong>{file.summary}</strong>
-                  <span>{file.path}</span>
+                  <span>{humanizeSurfaceLabel(file.path)}</span>
                 </li>
               ))
             ) : (
@@ -108,7 +108,7 @@ export function ProofVault({
           <ul className="proof-list">
             {brief.impactedAreas.map((area) => (
               <li key={area}>
-                <strong>{area}</strong>
+                <strong>{humanizeSurfaceLabel(area)}</strong>
               </li>
             ))}
           </ul>
@@ -121,8 +121,8 @@ export function ProofVault({
             {mission.artifacts.checks.length > 0 ? (
               mission.artifacts.checks.map((check) => (
                 <li key={`${check.name}-${check.status}`}>
-                  <strong>{check.name}</strong>
-                  <span>{check.status}</span>
+                  <strong>{humanizeCheckName(check.name)}</strong>
+                  <span>{humanizeCheckStatus(check.status)}</span>
                 </li>
               ))
             ) : (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { seededBrief, seededMission } from "../../shared/mock";
-import type { MissionBrief, MissionMode, MissionRun } from "../../shared/types";
+import type { AgentRole, MissionBrief, MissionMode, MissionRun } from "../../shared/types";
 import { analyzeMission, getContinuePrompt, startMission, subscribeToMission } from "./api";
 import { ContinueMissionModal } from "./components/ContinueMissionModal";
 import { MissionComposer } from "./components/MissionComposer";
@@ -8,7 +8,7 @@ import { MissionTheater } from "./components/MissionTheater";
 import { Prelude } from "./components/Prelude";
 import { ProofVault } from "./components/ProofVault";
 import { TechnicalProofDrawer } from "./components/TechnicalProofDrawer";
-import { buildStoryMoments, getChapterStates, getMissionProgress } from "./presentation";
+import { getChapterStates, getDefaultCrewRole, getMissionProgress } from "./presentation";
 
 export default function App() {
   const composerRef = useRef<HTMLElement | null>(null);
@@ -28,6 +28,7 @@ export default function App() {
   const [showTechnicalProof, setShowTechnicalProof] = useState(false);
   const [error, setError] = useState("");
   const [busyState, setBusyState] = useState<"idle" | "analyzing" | "launching">("idle");
+  const [selectedCrewRole, setSelectedCrewRole] = useState<AgentRole>("executor");
 
   useEffect(() => {
     if (!activeMission) {
@@ -57,7 +58,10 @@ export default function App() {
 
   const missionProgress = useMemo(() => getMissionProgress(visibleMission.stage), [visibleMission.stage]);
   const chapters = useMemo(() => getChapterStates(visibleMission.stage), [visibleMission.stage]);
-  const storyMoments = useMemo(() => buildStoryMoments(visibleBrief, visibleMission), [visibleBrief, visibleMission]);
+
+  useEffect(() => {
+    setSelectedCrewRole(getDefaultCrewRole(visibleMission));
+  }, [visibleMission.id, visibleMission.stage]);
 
   async function handleAnalyze() {
     setBusyState("analyzing");
@@ -129,7 +133,12 @@ export default function App() {
       <div className="scene-grid" />
       <div className="scene-noise" />
 
-      <Prelude brief={visibleBrief} missionProgress={missionProgress} chapters={chapters} onStart={handlePreludeStart} />
+      <Prelude
+        brief={visibleBrief}
+        missionStage={visibleMission.stage}
+        missionProgress={missionProgress}
+        onStart={handlePreludeStart}
+      />
 
       <main className="experience-stack">
         <section ref={composerRef}>
@@ -156,9 +165,9 @@ export default function App() {
           <MissionTheater
             brief={visibleBrief}
             mission={visibleMission}
-            missionProgress={missionProgress}
             chapters={chapters}
-            storyMoments={storyMoments}
+            selectedCrewRole={selectedCrewRole}
+            onSelectCrew={setSelectedCrewRole}
             onOpenTechnicalProof={() => setShowTechnicalProof(true)}
           />
         </section>

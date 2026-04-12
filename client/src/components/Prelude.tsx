@@ -1,15 +1,16 @@
-import type { MissionBrief } from "../../../shared/types";
-import type { ChapterState } from "../presentation";
+import type { MissionBrief, MissionStage } from "../../../shared/types";
+import { getCurrentChapterLabel, getPreviewScenes } from "../presentation";
 
 interface PreludeProps {
   brief: MissionBrief;
+  missionStage: MissionStage;
   missionProgress: number;
-  chapters: ChapterState[];
   onStart: () => void;
 }
 
-export function Prelude({ brief, missionProgress, chapters, onStart }: PreludeProps) {
-  const previewChapters = [chapters[0], chapters[Math.min(2, chapters.length - 1)], chapters[chapters.length - 1]];
+export function Prelude({ brief, missionStage, missionProgress, onStart }: PreludeProps) {
+  const previewScenes = getPreviewScenes(missionStage, brief);
+  const currentChapterLabel = getCurrentChapterLabel(missionStage);
 
   return (
     <section className="prelude">
@@ -26,45 +27,43 @@ export function Prelude({ brief, missionProgress, chapters, onStart }: PreludePr
         </button>
 
         <div className="prelude-pill-row">
-          <span className="signal-pill">{brief.repoScan.framework}</span>
-          <span className="signal-pill">{brief.repoScan.supportLevel}</span>
-          <span className="signal-pill">{brief.repoTarget.owner + "/" + brief.repoTarget.repo}</span>
+          <span className="signal-pill">Front-end storytelling</span>
+          <span className="signal-pill">Visible progress</span>
+          <span className="signal-pill">Demo-ready reveal</span>
         </div>
       </div>
 
       <div className="prelude-preview cinematic-panel">
         <div className="preview-header">
           <div>
-            <p className="section-tag muted">Live preview</p>
+            <p className="section-tag muted">Mission Preview</p>
             <h2>{brief.missionTitle}</h2>
           </div>
-          <span className="preview-progress">{Math.round(missionProgress)}%</span>
+          <span className="preview-progress">Now in {currentChapterLabel}</span>
         </div>
 
-        <div className="preview-core">
-          <div className="preview-grid" />
-          <div className="preview-ring preview-ring-a" />
-          <div className="preview-ring preview-ring-b" />
-          <div className="preview-orb preview-orb-pm">PM</div>
-          <div className="preview-orb preview-orb-architect">AR</div>
-          <div className="preview-orb preview-orb-executor">EX</div>
-          <div className="preview-orb preview-orb-qa">QA</div>
-
-          <div className="preview-heart">
-            <span className="preview-heart-kicker">Mission core</span>
-            <strong>{brief.selectedObjective}</strong>
-            <small>{previewChapters[1]?.pulse ?? brief.implementationBrief}</small>
-          </div>
+        <div className="preview-meter">
+          <div className="preview-meter-fill" style={{ width: `${missionProgress}%` }} />
         </div>
 
-        <div className="preview-rail">
-          {previewChapters.map((chapter) => (
-            <article key={chapter.stage} className={`preview-chapter ${chapter.state}`}>
-              <span>{chapter.chapter}</span>
-              <small>{chapter.pulse}</small>
+        <div className="preview-summary">
+          <span className="preview-summary-kicker">What the audience is following</span>
+          <strong>{brief.selectedObjective}</strong>
+          <p>{brief.implementationBrief}</p>
+        </div>
+
+        <div className="preview-scenes">
+          {previewScenes.map((scene) => (
+            <article key={scene.title} className={`preview-scene ${scene.state}`}>
+              <span>{scene.title}</span>
+              <p>{scene.body}</p>
             </article>
           ))}
         </div>
+
+        <p className="preview-note">
+          Cascade turns the waiting time into a guided story your audience can actually follow from first signal to final reveal.
+        </p>
       </div>
     </section>
   );
