@@ -130,10 +130,10 @@ export const seededBrief: MissionBrief = {
     prSummary: "Tighten the onboarding shell, add visible progress, and package proof for the handoff."
   },
   modelSelection: {
-    requestedModel: "gemini-2.5-pro",
-    fallbackModel: "gemini-2.5-flash",
-    attemptedModels: ["gemini-2.5-pro"],
-    activeModel: "gemini-2.5-pro",
+    requestedModel: "gemini-3.1-pro-preview",
+    fallbackModel: "gemini-3-pro-preview",
+    attemptedModels: ["gemini-3.1-pro-preview"],
+    activeModel: "gemini-3.1-pro-preview",
     fallbackUsed: false,
     keyMode: "server",
     provider: "gemini-developer"
