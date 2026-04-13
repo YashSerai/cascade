@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { seededBrief, seededMission } from "../../shared/mock";
+import { seededMission } from "../../shared/mock";
 import type { AgentRole, MissionBrief, MissionMode, MissionRun } from "../../shared/types";
 import { analyzeMission, getContinuePrompt, startMission, subscribeToMission } from "./api";
+import { createIdleMissionBrief } from "./idleMissionBrief";
 import { ContinueMissionModal } from "./components/ContinueMissionModal";
 import { MissionComposer } from "./components/MissionComposer";
 import { MissionTheater } from "./components/MissionTheater";
@@ -49,11 +50,13 @@ export default function App() {
     theaterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [activeMission?.id]);
 
-  const preludeBrief = brief ?? activeMission?.brief ?? seededBrief;
+  const shellBrief = useMemo(() => createIdleMissionBrief(repoUrl, mode), [repoUrl, mode]);
+  const preludeDisplayBrief = brief ?? activeMission?.brief ?? null;
+  const effectiveMissionBrief = preludeDisplayBrief ?? shellBrief;
   const visibleBrief = brief ?? activeMission?.brief ?? null;
   const previewMission = useMemo(
-    () => buildPreviewMission(preludeBrief, Boolean(brief), busyState === "analyzing"),
-    [preludeBrief, brief, busyState]
+    () => buildPreviewMission(effectiveMissionBrief, Boolean(brief), busyState === "analyzing"),
+    [effectiveMissionBrief, brief, busyState]
   );
   const visibleMission = activeMission ?? previewMission;
   const liveBrief = brief ?? activeMission?.brief ?? null;
@@ -148,9 +151,10 @@ export default function App() {
       <div className="scene-noise" />
 
       <Prelude
-        brief={preludeBrief}
-        missionStage={showTheater ? visibleMission.stage : "objective_received"}
+        brief={preludeDisplayBrief}
+        missionStage={showTheater ? visibleMission.stage : busyState === "analyzing" ? "recon" : "objective_received"}
         missionProgress={missionProgress}
+        isAnalyzing={busyState === "analyzing"}
         onStart={handlePreludeStart}
       />
 
@@ -203,7 +207,7 @@ export default function App() {
       </main>
 
       <TechnicalProofDrawer
-        brief={preludeBrief}
+        brief={effectiveMissionBrief}
         mission={visibleMission}
         open={showTechnicalProof}
         onClose={() => setShowTechnicalProof(false)}

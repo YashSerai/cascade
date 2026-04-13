@@ -355,6 +355,41 @@ a {
   border-color: rgba(255, 111, 111, 0.24);
 }
 
+.preview-scene.pending {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.06);
+  opacity: 0.72;
+}
+
+.preview-summary-idle {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.preview-placeholder-title {
+  color: var(--muted);
+  font-size: clamp(1.35rem, 2vw, 1.85rem) !important;
+}
+
+.prelude-preview-analyzing .preview-meter-fill {
+  animation: preview-meter-pulse 1.4s ease-in-out infinite;
+}
+
+.prelude-preview-idle .preview-meter-fill {
+  opacity: 0.35;
+}
+
+@keyframes preview-meter-pulse {
+  0%, 100% {
+    opacity: 0.55;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.15);
+  }
+}
+
 .preview-note {
   margin-top: 16px;
 }
