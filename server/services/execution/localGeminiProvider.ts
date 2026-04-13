@@ -6,6 +6,68 @@ import { resolveApiKey, generateStructuredJson } from "../model";
 import { getNpmCommand, readTextIfExists, runCommand, trimOutput, writeFileSafe } from "../files";
 import type { ExecutionContext, ExecutionProvider, PlanResult } from "./provider";
 
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return v !== null && typeof v === "object" && !Array.isArray(v);
+}
+
+/** Map snake_case keys some Gemini variants emit for the execution plan. */
+function mergePlanKeyAliases(o: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...o };
+  if (out.targetFiles === undefined && Array.isArray(out.target_files)) {
+    out.targetFiles = out.target_files;
+  }
+  if (out.verificationStrategy === undefined && Array.isArray(out.verification_strategy)) {
+    out.verificationStrategy = out.verification_strategy;
+  }
+  return out;
+}
+
+/**
+ * Gemini sometimes nests the plan or returns multiple sibling objects; `coerceModelJsonRoot` may
+ * pick the wrong one by key count. Prefer objects that include `edits`, unwrap `plan` / `data`, etc.
+ */
+export function normalizePlanPayload(value: unknown): unknown {
+  let v: unknown = value;
+
+  for (let depth = 0; depth < 10; depth++) {
+    if (Array.isArray(v)) {
+      const objs = v.filter(isPlainObject);
+      if (objs.length === 0) {
+        return v;
+      }
+      const withEdits = objs.find((o) => Array.isArray(o.edits) && o.edits.length > 0);
+      v = withEdits ?? objs.find((o) => typeof o.approach === "string") ?? objs.reduce((a, b) =>
+        Object.keys(a).length >= Object.keys(b).length ? a : b
+      );
+      continue;
+    }
+
+    if (!isPlainObject(v)) {
+      return v;
+    }
+
+    const o = mergePlanKeyAliases(v);
+    const inner =
+      o.plan ??
+      o.executionPlan ??
+      o.execution_plan ??
+      o.patch ??
+      o.data ??
+      o.result ??
+      o.output ??
+      o.response;
+
+    if (isPlainObject(inner)) {
+      v = mergePlanKeyAliases(inner);
+      continue;
+    }
+
+    return o;
+  }
+
+  return v;
+}
+
 const planSchema = z.object({
   approach: z.string(),
   targetFiles: z.array(z.string()).min(1).max(4),
@@ -66,6 +128,7 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
       clientOptions,
       schema: planSchema,
       responseSchema: planResponseSchema,
+      normalizeParsed: normalizePlanPayload,
       systemInstruction:
         "You are Cascade Executor. Rewrite only the supplied files to implement the mission. Keep edits coherent, conservative, and buildable. Return JSON only.",
       prompt: buildPlanningPrompt(context.brief, editableFiles)
@@ -177,6 +240,7 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
       clientOptions,
       schema: planSchema,
       responseSchema: planResponseSchema,
+      normalizeParsed: normalizePlanPayload,
       systemInstruction:
         "You are Cascade Executor running a repair pass. The previous patch broke the build or tests. Read the error output carefully, then rewrite the supplied files to fix the errors while preserving the intended feature. Keep the app buildable. Return JSON only.",
       prompt: buildRepairPrompt(context.brief, currentFiles, errorOutput)
@@ -277,6 +341,9 @@ function buildPlanningPrompt(brief: ExecutionContext["brief"], editableFiles: { 
     "You may only rewrite the supplied files. Keep the app buildable and preserve the project's style.",
     "Prefer a visible UX improvement so the proof bundle is demo-friendly.",
     "",
+    "Return JSON only as one flat object with these top-level keys exactly: approach (string), targetFiles (string array), verificationStrategy (string array), notes (string array), edits (array of { path, summary, content }).",
+    "Do not nest that object under plan, data, result, or wrap it in an array.",
+    "",
     ...editableFiles.flatMap((file) => [`FILE: ${file.path}`, file.content, "", "---"])
   ].join("\n");
 }
@@ -295,6 +362,8 @@ function buildRepairPrompt(brief: ExecutionContext["brief"], currentFiles: { pat
     errorOutput,
     "",
     "CURRENT FILE STATE (after the broken patch):",
-    ...currentFiles.flatMap((file) => [`FILE: ${file.path}`, file.content, "", "---"])
+    ...currentFiles.flatMap((file) => [`FILE: ${file.path}`, file.content, "", "---"]),
+    "",
+    "Return JSON only as one flat object with top-level keys: approach, targetFiles, verificationStrategy, notes, edits (same shape as the initial plan). Do not nest under plan or data."
   ].join("\n");
 }

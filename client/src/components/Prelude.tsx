@@ -24,10 +24,10 @@ export function Prelude({ brief, missionStage, missionProgress, isAnalyzing, onS
     <section className="prelude">
       <div className="prelude-copy">
         <p className="section-tag">Cascade / live mission control</p>
-        <h1>Show the work while it ships.</h1>
+        <h1>Ship the story the room can follow.</h1>
         <p className="prelude-lead">
-          Cascade turns repo changes into a live product story. Drop in a repo, frame the ask, and let the room follow
-          progress without reading logs.
+          Paste a public repo, describe the change, and run a live mission: clone, scan, patch, verify, proof — with PM,
+          Architect, Builder, and QA on screen so judges see the work, not a log tail.
         </p>
 
         <button type="button" className="primary-button hero-button" onClick={onStart}>

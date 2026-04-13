@@ -72,6 +72,8 @@ export async function generateStructuredJson<T>(input: {
   responseSchema: Record<string, unknown>;
   systemInstruction: string;
   prompt: string;
+  /** Applied after array/root coercion; use to unwrap nested shapes (e.g. execution plan under `plan`). */
+  normalizeParsed?: (value: unknown) => unknown;
 }) {
   if (input.provider === "vertex-ai") {
     return generateStructuredJsonViaVertexApi(input);
@@ -96,7 +98,8 @@ export async function generateStructuredJson<T>(input: {
       });
 
       const raw = extractJson(response.text ?? "");
-      const parsed = input.schema.parse(coerceModelJsonRoot(JSON.parse(raw)));
+      const coerced = coerceModelJsonRoot(JSON.parse(raw));
+      const parsed = input.schema.parse(input.normalizeParsed ? input.normalizeParsed(coerced) : coerced);
 
       return {
         data: parsed,
@@ -181,6 +184,7 @@ async function generateStructuredJsonViaVertexApi<T>(input: {
   responseSchema: Record<string, unknown>;
   systemInstruction: string;
   prompt: string;
+  normalizeParsed?: (value: unknown) => unknown;
 }) {
   const attemptedModels: string[] = [];
   let lastError: unknown;
@@ -232,7 +236,8 @@ async function generateStructuredJsonViaVertexApi<T>(input: {
           .trim() ?? "";
 
       const raw = extractJson(rawText);
-      const parsed = input.schema.parse(coerceModelJsonRoot(JSON.parse(raw)));
+      const coerced = coerceModelJsonRoot(JSON.parse(raw));
+      const parsed = input.schema.parse(input.normalizeParsed ? input.normalizeParsed(coerced) : coerced);
 
       return {
         data: parsed,

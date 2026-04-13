@@ -199,7 +199,6 @@ export function MissionComposer(props: MissionComposerProps) {
             <div className="readiness-header">
               <div>
                 <p className="section-tag muted">Route locked</p>
-                <h3>{brief.routePlan.routeHeadline}</h3>
               </div>
               <span className={`status-pill ${brief.repoScan.supportLevel}`}>{brief.routePlan.summaryCards.support.title}</span>
             </div>
