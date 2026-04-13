@@ -56,7 +56,7 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
 
     const { apiKey, keyMode, provider, clientOptions } = resolveApiKey(context.apiKey);
     if (!apiKey) {
-      throw new Error("Gemini API key missing. Add a server key or provide BYOK in the UI to run execution.");
+      throw new Error("Gemini API key missing. Add a key in the UI or configure one on the server to run execution.");
     }
 
     const result = await generateStructuredJson({

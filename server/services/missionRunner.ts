@@ -148,7 +148,7 @@ export async function runMission(missionId: string, apiKey?: string) {
         summary: "Cascade hit a blocker before proof could be fully delivered.",
         nextSteps: [
           "Review the blocker details in the mission log.",
-          "Rerun the mission with BYOK or a simpler supported repo."
+          "Use Continue Working to hand off to another pass with more context."
         ]
       }
     }));

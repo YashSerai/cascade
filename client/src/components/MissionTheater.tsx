@@ -140,7 +140,7 @@ export function MissionTheater({
             <article className="run-blocker">
               <span>Blocker</span>
               <strong>{primaryBlocker}</strong>
-              <p>Clear this and rerun to unlock execution, checks, and proof artifacts.</p>
+              <p>Use Continue Working to hand the mission off for another pass.</p>
             </article>
           ) : null}
         </div>

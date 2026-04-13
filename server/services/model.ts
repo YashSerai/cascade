@@ -96,7 +96,7 @@ export async function generateStructuredJson<T>(input: {
       });
 
       const raw = extractJson(response.text ?? "");
-      const parsed = input.schema.parse(JSON.parse(raw));
+      const parsed = input.schema.parse(unwrapIfArray(JSON.parse(raw)));
 
       return {
         data: parsed,
@@ -116,6 +116,13 @@ export async function generateStructuredJson<T>(input: {
   }
 
   throw lastError instanceof Error ? lastError : new Error("Gemini failed to return a valid response.");
+}
+
+function unwrapIfArray(value: unknown): unknown {
+  if (Array.isArray(value) && value.length === 1 && typeof value[0] === "object" && value[0] !== null) {
+    return value[0];
+  }
+  return value;
 }
 
 function extractJson(raw: string) {
@@ -187,7 +194,7 @@ async function generateStructuredJsonViaVertexApi<T>(input: {
           .trim() ?? "";
 
       const raw = extractJson(rawText);
-      const parsed = input.schema.parse(JSON.parse(raw));
+      const parsed = input.schema.parse(unwrapIfArray(JSON.parse(raw)));
 
       return {
         data: parsed,

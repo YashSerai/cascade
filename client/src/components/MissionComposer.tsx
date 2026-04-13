@@ -63,7 +63,7 @@ export function MissionComposer(props: MissionComposerProps) {
       : liveBrief.modelSelection.keyMode === "server"
         ? "Hosted Gemini lane"
         : liveBrief.modelSelection.keyMode === "user"
-          ? "BYOK Gemini lane"
+          ? "Your Gemini key"
           : "Planning lane"
     : "Route appears after analyze";
   const [loadingFrame, setLoadingFrame] = useState(0);
@@ -160,7 +160,7 @@ export function MissionComposer(props: MissionComposerProps) {
 
           {needsExecutionKey ? (
             <p className="launch-hint">
-              Analyze works in planning mode, but live execution needs BYOK or a hosted server Gemini/Vertex key.
+              Analyze works in planning mode. Add a Gemini key above to unlock live execution.
             </p>
           ) : null}
 

@@ -77,7 +77,7 @@ function buildFallbackRoutePlan(input: {
   const routeHeadline =
     input.mode === "discover"
       ? `Find the clearest product win in ${humanizePath(primarySurface)}.`
-      : `Build ${toSentenceCase(input.selectedObjective)} in the clearest product surface.`;
+      : `${toSentenceCase(input.selectedObjective)}`;
   const ribbonTitle =
     input.mode === "discover" ? summarizeTitle(input.selectedObjective, 9) : summarizeTitle(input.requestLine, 10);
   const ribbonSummary =

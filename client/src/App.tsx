@@ -96,7 +96,7 @@ export default function App() {
     }
 
     if (liveBrief.modelSelection.keyMode === "none" && !apiKey.trim()) {
-      setError("Live run needs a Gemini key. Paste BYOK to execute the mission, or add a server key to Cloud Run.");
+      setError("Live run needs a Gemini key. Add one above or configure a server key to execute the mission.");
       composerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -254,7 +254,7 @@ function buildPreviewMission(brief: MissionBrief, routeLocked: boolean, isAnalyz
         ],
         summary: "Route preview is ready. Start live run to generate a real patch, checks, and proof.",
         blockers: [],
-        nextSteps: ["Start live run with BYOK or a configured server key."]
+        nextSteps: ["Start the live run to move from planning into execution."]
       }
     };
   }
