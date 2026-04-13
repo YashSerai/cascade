@@ -125,10 +125,10 @@ export const stagePresentation: Record<MissionStage, StagePresentation> = {
     pulse: "The reveal is ready."
   },
   mission_blocked: {
-    chapter: "Handle blocker",
-    title: "A blocker was caught without losing context.",
-    description: "Cascade logged the friction and preserved the clearest next move.",
-    pulse: "The route needs review."
+    chapter: "Blocker caught",
+    title: "Something needs attention before proof can land.",
+    description: "Cascade tried to resolve this automatically but the issue persists. Context is preserved for the next move.",
+    pulse: "Waiting for resolution."
   }
 };
 

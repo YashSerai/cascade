@@ -53,10 +53,14 @@ export function MissionTheater({
             </div>
             <span className={`status-pill ${mission.stage === "mission_blocked" ? "blocked" : brief.repoScan.supportLevel}`}>
               {mission.stage === "proof_delivered"
-                ? "Proof packaged"
+                ? "Proof delivered"
                 : mission.stage === "mission_blocked"
-                  ? "Blocker surfaced"
-                  : "Run in motion"}
+                  ? "Needs attention"
+                  : mission.stage === "execution_underway"
+                    ? "Building"
+                    : mission.stage === "verification"
+                      ? "Verifying"
+                      : "In progress"}
             </span>
           </div>
 
@@ -138,9 +142,13 @@ export function MissionTheater({
 
           {primaryBlocker ? (
             <article className="run-blocker">
-              <span>Blocker</span>
+              <span>What stopped the run</span>
               <strong>{primaryBlocker}</strong>
-              <p>Use Continue Working to hand the mission off for another pass.</p>
+              {mission.artifacts.blockers.length > 1 ? (
+                <p>{mission.artifacts.blockers.length - 1} additional blocker{mission.artifacts.blockers.length > 2 ? "s" : ""} logged. Open the proof vault for details.</p>
+              ) : (
+                <p>Cascade attempted to resolve this automatically. Use Continue Working to try again with more context.</p>
+              )}
             </article>
           ) : null}
         </div>

@@ -94,23 +94,68 @@ export async function runMission(missionId: string, apiKey?: string) {
     }));
     appendLog(missionId, "info", "Verification started. Installing repo dependencies and running the strongest detected script.");
 
-    const checks = await provider.runChecks({ workspace, brief: latest.brief, apiKey });
-    for (const check of checks) {
-      appendLog(
-        missionId,
-        check.status === "failed" ? "error" : check.status === "skipped" ? "warn" : "info",
-        check.command
-          ? `${check.name} ${check.status}. Command: ${check.command}.`
-          : `${check.name} ${check.status}.`
-      );
+    const MAX_REPAIR_ATTEMPTS = 3;
+    let currentChangedFiles = changedFiles;
+    let checks = await provider.runChecks({ workspace, brief: latest.brief, apiKey });
+    logChecks(missionId, checks);
+
+    let repairableFailures = getRepairableFailures(checks);
+    let attempt = 1;
+
+    while (repairableFailures.length > 0 && attempt < MAX_REPAIR_ATTEMPTS) {
+      attempt++;
+      appendLog(missionId, "info", `Build or test failed. Starting self-repair pass ${attempt} of ${MAX_REPAIR_ATTEMPTS}.`);
+      setAgent(missionId, "executor", "active", `Repair pass ${attempt}: feeding errors back to Gemini.`, 50 + attempt * 15);
+      setAgent(missionId, "qa", "active", `Waiting for repair pass ${attempt} to finish.`, 50 + attempt * 10);
+
+      store.updateMission(missionId, (current) => ({
+        ...current,
+        stage: "execution_underway",
+        artifacts: {
+          ...current.artifacts,
+          summary: `Repair pass ${attempt} of ${MAX_REPAIR_ATTEMPTS}. Fixing build errors automatically.`
+        }
+      }));
+
+      try {
+        const repairedFiles = await provider.repairTask({ workspace, brief: latest.brief, apiKey }, currentChangedFiles, repairableFailures);
+        const allPaths = new Set([...currentChangedFiles.map((f) => f.path), ...repairedFiles.map((f) => f.path)]);
+        currentChangedFiles = [...allPaths].map((p) => repairedFiles.find((f) => f.path === p) ?? currentChangedFiles.find((f) => f.path === p)!);
+
+        appendLog(missionId, "info", `Repair pass ${attempt} applied. Re-running verification.`);
+        setAgent(missionId, "executor", "done", `Repair pass ${attempt} applied.`, 100);
+        setAgent(missionId, "qa", "active", "Re-running verification after repair.", 60 + attempt * 10);
+
+        store.updateMission(missionId, (current) => ({
+          ...current,
+          stage: "verification",
+          artifacts: {
+            ...current.artifacts,
+            changedFiles: currentChangedFiles,
+            summary: `Repair pass ${attempt} applied. Re-verifying.`
+          }
+        }));
+
+        checks = await provider.runChecks({ workspace, brief: latest.brief, apiKey });
+        logChecks(missionId, checks);
+        repairableFailures = getRepairableFailures(checks);
+      } catch (repairError) {
+        appendLog(missionId, "warn", `Repair pass ${attempt} failed: ${repairError instanceof Error ? repairError.message : "unknown error"}`);
+        break;
+      }
     }
-    const collected = await provider.collectArtifacts({ workspace, brief: latest.brief, apiKey }, plan, changedFiles, checks);
+
+    if (repairableFailures.length === 0 && attempt > 1) {
+      appendLog(missionId, "info", `Self-repair succeeded after ${attempt} attempt${attempt === 1 ? "" : "s"}.`);
+    }
+
+    const collected = await provider.collectArtifacts({ workspace, brief: latest.brief, apiKey }, plan, currentChangedFiles, checks);
     const stage = collected.blockers.length > 0 ? "mission_blocked" : "proof_delivered";
     appendLog(
       missionId,
       collected.blockers.length > 0 ? "warn" : "info",
       collected.blockers.length > 0
-        ? "Proof packaged with blockers preserved for the next pass."
+        ? `Proof packaged with blockers after ${attempt} attempt${attempt === 1 ? "" : "s"}.`
         : "Proof packaged. The mission is ready for handoff."
     );
 
@@ -118,7 +163,9 @@ export async function runMission(missionId: string, apiKey?: string) {
       missionId,
       "qa",
       collected.blockers.length > 0 ? "blocked" : "done",
-      collected.blockers.length > 0 ? "Verification found blockers. Proof is still packaged." : "Verification passed and proof is unlocked.",
+      collected.blockers.length > 0
+        ? `Verification still failing after ${attempt} attempt${attempt === 1 ? "" : "s"}.`
+        : `Verification passed${attempt > 1 ? ` after ${attempt} attempts` : ""}. Proof is unlocked.`,
       100
     );
     store.updateMission(missionId, (current) => ({
@@ -126,6 +173,7 @@ export async function runMission(missionId: string, apiKey?: string) {
       stage,
       artifacts: {
         ...current.artifacts,
+        changedFiles: currentChangedFiles,
         checks,
         screenshots: collected.screenshots,
         pullRequestDraft: collected.pullRequestDraft,
@@ -199,4 +247,24 @@ function appendLog(missionId: string, level: "info" | "warn" | "error", message:
       ]
     }
   }));
+}
+
+function logChecks(missionId: string, checks: import("../../shared/types").CheckArtifact[]) {
+  for (const check of checks) {
+    appendLog(
+      missionId,
+      check.status === "failed" ? "error" : check.status === "skipped" ? "warn" : "info",
+      check.command
+        ? `${check.name} ${check.status}. Command: ${check.command}.`
+        : `${check.name} ${check.status}.`
+    );
+  }
+}
+
+function getRepairableFailures(checks: import("../../shared/types").CheckArtifact[]) {
+  const installFailed = checks.some((check) => check.name === "install" && check.status === "failed");
+  if (installFailed) {
+    return [];
+  }
+  return checks.filter((check) => check.status === "failed" && check.name !== "install");
 }

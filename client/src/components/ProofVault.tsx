@@ -20,14 +20,31 @@ export function ProofVault({
 }: ProofVaultProps) {
   const isLiveMission = activeMissionId !== null;
   const passedChecks = mission.artifacts.checks.filter((check) => check.status === "passed").length;
-  const stageInfo = stagePresentation[mission.stage];
+  const totalChecks = mission.artifacts.checks.length;
+  const failedChecks = mission.artifacts.checks.filter((check) => check.status === "failed").length;
+  const isBlocked = mission.stage === "mission_blocked";
+  const isDelivered = mission.stage === "proof_delivered";
+
+  const heroHeadline = isDelivered
+    ? "Mission complete"
+    : isBlocked
+      ? "Mission needs attention"
+      : "Verification in progress";
+
+  const heroPill = isDelivered
+    ? "Proof ready"
+    : isBlocked && failedChecks > 0
+      ? `${failedChecks} check${failedChecks === 1 ? "" : "s"} failing`
+      : isBlocked
+        ? "Blocker logged"
+        : "Verifying";
 
   return (
     <section className="proof-section" id="proof-vault">
       <div className="section-heading">
         <div>
           <p className="section-tag">Proof Vault</p>
-          <h2>Close the loop with proof.</h2>
+          <h2>{isDelivered ? "The mission landed." : "Close the loop with proof."}</h2>
         </div>
         <button type="button" className="secondary-button" onClick={onOpenTechnicalProof}>
           Technical proof
@@ -38,11 +55,11 @@ export function ProofVault({
         <article className="proof-hero cinematic-panel">
           <div className="proof-hero-header">
             <div>
-              <p className="section-tag muted">{isLiveMission ? "Live outcome" : "Preview finish"}</p>
-              <h3>{stageInfo.chapter}</h3>
+              <p className="section-tag muted">{isLiveMission ? "Live outcome" : "Preview"}</p>
+              <h3>{heroHeadline}</h3>
             </div>
-            <span className={`status-pill ${mission.stage === "mission_blocked" ? "blocked" : "supported"}`}>
-              {mission.stage === "mission_blocked" ? "Blocker logged" : "Proof ready"}
+            <span className={`status-pill ${isBlocked ? "blocked" : "supported"}`}>
+              {heroPill}
             </span>
           </div>
 
@@ -54,12 +71,12 @@ export function ProofVault({
               <strong>{mission.artifacts.changedFiles.length}</strong>
             </div>
             <div className="metric-tile">
-              <span>Checks passed</span>
-              <strong>{passedChecks}</strong>
+              <span>Checks</span>
+              <strong>{totalChecks > 0 ? `${passedChecks}/${totalChecks}` : "0"}</strong>
             </div>
             <div className="metric-tile">
-              <span>Pain points</span>
-              <strong>{brief.painPoints.length}</strong>
+              <span>Blockers</span>
+              <strong>{mission.artifacts.blockers.length}</strong>
             </div>
             <div className="metric-tile">
               <span>Next steps</span>
@@ -95,7 +112,7 @@ export function ProofVault({
                 </li>
               ))
             ) : (
-              <li className="empty-state">No changed surfaces yet.</li>
+              <li className="empty-state">Changes will appear once the patch is applied.</li>
             )}
           </ul>
         </article>
@@ -124,13 +141,13 @@ export function ProofVault({
                 </li>
               ))
             ) : (
-              <li className="empty-state">Verification will land here once the route reaches the vault.</li>
+              <li className="empty-state">Checks run automatically after the patch is applied.</li>
             )}
           </ul>
         </article>
 
         <article className="proof-card cinematic-panel">
-          <p className="section-tag muted">Next move</p>
+          <p className="section-tag muted">What happens next</p>
           <h3>Next steps</h3>
           <ul className="proof-list">
             {mission.artifacts.nextSteps.length > 0 ? (
@@ -140,7 +157,7 @@ export function ProofVault({
                 </li>
               ))
             ) : (
-              <li className="empty-state">Next steps will appear after execution or review.</li>
+              <li className="empty-state">Next steps appear after the mission finishes.</li>
             )}
           </ul>
         </article>
@@ -162,7 +179,7 @@ export function ProofVault({
                 ))}
               </>
             ) : (
-              <li className="empty-state">A PR-ready summary will appear after execution packages the mission.</li>
+              <li className="empty-state">A PR-ready summary appears after the mission delivers proof.</li>
             )}
           </ul>
         </article>

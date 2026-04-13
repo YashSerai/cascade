@@ -148,6 +148,60 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
     return checks;
   }
 
+  async repairTask(context: ExecutionContext, changedFiles: ChangedFile[], failedChecks: CheckArtifact[]): Promise<ChangedFile[]> {
+    const currentFiles: { path: string; content: string }[] = [];
+    for (const file of changedFiles) {
+      const content = await readTextIfExists(path.join(context.workspace, file.path));
+      if (content) {
+        currentFiles.push({ path: file.path, content });
+      }
+    }
+
+    if (currentFiles.length === 0) {
+      throw new Error("No changed files could be read back for the repair pass.");
+    }
+
+    const { apiKey, keyMode, provider, clientOptions } = resolveApiKey(context.apiKey);
+    if (!apiKey) {
+      throw new Error("Gemini API key missing for repair pass.");
+    }
+
+    const errorOutput = failedChecks
+      .map((check) => `Command: ${check.command ?? check.name}\nStatus: ${check.status}\nOutput:\n${check.output}`)
+      .join("\n\n---\n\n");
+
+    const result = await generateStructuredJson({
+      apiKey,
+      keyMode,
+      provider,
+      clientOptions,
+      schema: planSchema,
+      responseSchema: planResponseSchema,
+      systemInstruction:
+        "You are Cascade Executor running a repair pass. The previous patch broke the build or tests. Read the error output carefully, then rewrite the supplied files to fix the errors while preserving the intended feature. Keep the app buildable. Return JSON only.",
+      prompt: buildRepairPrompt(context.brief, currentFiles, errorOutput)
+    });
+
+    const allowedPaths = new Set(currentFiles.map((f) => f.path));
+    const filteredEdits = result.data.edits.filter((edit) => allowedPaths.has(edit.path));
+
+    if (filteredEdits.length === 0) {
+      throw new Error("Gemini repair pass did not produce edits for the changed files.");
+    }
+
+    const repairedFiles: ChangedFile[] = [];
+    for (const edit of filteredEdits) {
+      const existing = await readTextIfExists(path.join(context.workspace, edit.path));
+      if (existing === edit.content) {
+        continue;
+      }
+      await writeFileSafe(context.workspace, edit.path, edit.content);
+      repairedFiles.push({ path: edit.path, summary: edit.summary });
+    }
+
+    return repairedFiles.length > 0 ? repairedFiles : changedFiles;
+  }
+
   async collectArtifacts(_context: ExecutionContext, _plan: PlanResult, changedFiles: ChangedFile[], checks: CheckArtifact[]) {
     const blockers = checks.filter((check) => check.status === "failed").map((check) => `${check.name} failed. Review the verification output.`);
     const passedChecks = checks.filter((check) => check.status === "passed").map((check) => check.name);
@@ -172,12 +226,12 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
       nextSteps:
         blockers.length === 0
           ? [
-              "Capture screenshots or a short screen recording for the demo thread.",
-              "Use Continue Working to hand the mission off for a second refinement pass."
+              "Review the changes and capture screenshots for the demo.",
+              "Use Continue Working for a refinement pass if needed."
             ]
           : [
-              "Inspect the failing command output in the proof bundle.",
-              "Use Continue Working to feed the repo state and the blocker back into another coding agent."
+              "Cascade tried to self-repair but the issue persisted after multiple attempts.",
+              "Use Continue Working to hand the mission to another agent with more context."
             ],
       pullRequestDraft,
       screenshots: []
@@ -224,5 +278,23 @@ function buildPlanningPrompt(brief: ExecutionContext["brief"], editableFiles: { 
     "Prefer a visible UX improvement so the proof bundle is demo-friendly.",
     "",
     ...editableFiles.flatMap((file) => [`FILE: ${file.path}`, file.content, "", "---"])
+  ].join("\n");
+}
+
+function buildRepairPrompt(brief: ExecutionContext["brief"], currentFiles: { path: string; content: string }[], errorOutput: string) {
+  return [
+    `Mission title: ${brief.missionTitle}`,
+    `Objective: ${brief.selectedObjective}`,
+    `Repo framework: ${brief.repoScan.framework}`,
+    "",
+    "REPAIR PASS: The previous implementation attempt broke the build or tests.",
+    "Fix the errors shown below while keeping the intended feature intact.",
+    "You may only rewrite the supplied files. The app MUST build cleanly after your edits.",
+    "",
+    "BUILD/TEST ERROR OUTPUT:",
+    errorOutput,
+    "",
+    "CURRENT FILE STATE (after the broken patch):",
+    ...currentFiles.flatMap((file) => [`FILE: ${file.path}`, file.content, "", "---"])
   ].join("\n");
 }
