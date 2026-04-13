@@ -1,7 +1,8 @@
-import type { CSSProperties } from "react";
-import type { AgentRole, MissionBrief, MissionRun } from "../../../shared/types";
+import { type CSSProperties, useMemo } from "react";
+import type { AgentRole, MissionBrief, MissionRun, MissionStage } from "../../../shared/types";
 import {
   agentOrder,
+  agentPresentation,
   getCrewSpotlight,
   humanizeSurfaceLabel,
   stagePresentation,
@@ -30,7 +31,11 @@ export function MissionTheater({
   const selectedRoleFocus = brief.routePlan.roleFocus[selectedCrewRole];
   const timeline = mission.artifacts.logs.slice(-8);
   const primaryBlocker = mission.artifacts.blockers[0] ?? "";
-  const fileNodes = buildFileNodes(brief, mission, selectedRoleFocus.filePaths);
+  const fileNodes = useMemo(
+    () => buildFileNodes(brief, mission, selectedRoleFocus.filePaths, mission.stage),
+    [brief, mission, selectedRoleFocus.filePaths, mission.stage]
+  );
+  const activeAgentName = agentPresentation[selectedCrewRole].name;
 
   return (
     <section className="theater-section" id="mission-theater">
@@ -190,20 +195,73 @@ export function MissionTheater({
             </div>
           </article>
 
-          <article className="file-orbit">
+          <article className={`file-orbit stage-${mission.stage.replace(/_/g, "-")}`}>
             <div className="run-ledger-header">
               <div>
                 <span>Surface graph</span>
                 <strong>Files the mission is reading and changing</strong>
               </div>
-              <small>{selectedCrew.name} is currently centered on {selectedRoleFocus.filePaths.length} file surface(s)</small>
+              <small>{activeAgentName} is active on {selectedRoleFocus.filePaths.length} surface{selectedRoleFocus.filePaths.length !== 1 ? "s" : ""}</small>
             </div>
 
             <div className="orbit-stage">
               <svg className="orbit-lines" viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true">
-                {fileNodes.map((node) => (
-                  <line key={node.path} x1="500" y1="320" x2={node.anchorX} y2={node.anchorY} />
-                ))}
+                <defs>
+                  <filter id="glow-plasma">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                  <filter id="glow-brass">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                  <filter id="glow-green">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                </defs>
+                {fileNodes.map((node) => {
+                  const baseState = node.state.split(" ")[0];
+                  const isActive = node.state.includes("selected");
+                  const lineClass = `orbit-wire ${baseState}${isActive ? " active" : ""}`;
+                  const filterRef = baseState === "changed" ? "url(#glow-brass)"
+                    : baseState === "verify" ? "url(#glow-green)"
+                    : baseState === "targeted" ? "url(#glow-plasma)"
+                    : undefined;
+
+                  return (
+                    <g key={node.path}>
+                      <line
+                        className={lineClass}
+                        x1="500" y1="320"
+                        x2={node.anchorX} y2={node.anchorY}
+                        filter={filterRef}
+                      />
+                      {[0, 1, 2].map((i) => (
+                        <circle
+                          key={i}
+                          className={`orbit-particle ${baseState}`}
+                          cx="500" cy="320" r={baseState === "changed" ? 3.5 : 2.5}
+                          style={{
+                            "--tx": `${node.anchorX - 500}px`,
+                            "--ty": `${node.anchorY - 320}px`,
+                            animationDelay: `${i * (baseState === "changed" ? 800 : baseState === "targeted" ? 1100 : 1600)}ms`,
+                          } as CSSProperties}
+                        />
+                      ))}
+                      {isActive ? (
+                        <text
+                          className="orbit-agent-label"
+                          x={(500 + node.anchorX) / 2}
+                          y={(320 + node.anchorY) / 2 - 10}
+                          textAnchor="middle"
+                        >
+                          {activeAgentName}
+                        </text>
+                      ) : null}
+                    </g>
+                  );
+                })}
               </svg>
 
               <div className="orbit-core">
@@ -224,7 +282,7 @@ export function MissionTheater({
                     } as CSSProperties
                   }
                 >
-                  <span>{node.label}</span>
+                  <span className="file-node-badge">{node.label}</span>
                   <strong>{node.path}</strong>
                   <small>{node.summary}</small>
                 </article>
@@ -250,37 +308,58 @@ export function MissionTheater({
   );
 }
 
-function buildFileNodes(brief: MissionBrief, mission: MissionRun, selectedPaths: string[]) {
+const outerPositions = [
+  { x: 14, y: 16, anchorX: 200, anchorY: 120 },
+  { x: 72, y: 14, anchorX: 800, anchorY: 110 },
+  { x: 82, y: 46, anchorX: 880, anchorY: 300 },
+  { x: 70, y: 78, anchorX: 770, anchorY: 530 },
+  { x: 16, y: 76, anchorX: 210, anchorY: 510 },
+  { x: 8, y: 46, anchorX: 140, anchorY: 300 }
+];
+
+const innerPositions = [
+  { x: 24, y: 26, anchorX: 290, anchorY: 190 },
+  { x: 64, y: 24, anchorX: 710, anchorY: 180 },
+  { x: 72, y: 50, anchorX: 790, anchorY: 330 },
+  { x: 62, y: 72, anchorX: 690, anchorY: 490 },
+  { x: 26, y: 70, anchorX: 300, anchorY: 470 },
+  { x: 18, y: 50, anchorX: 230, anchorY: 330 }
+];
+
+function getPositionsForStage(stage: MissionStage, state: string, index: number) {
+  const isActiveFile = state === "changed" || state === "targeted";
+  const pullInward = (stage === "execution_underway" || stage === "verification") && isActiveFile;
+  return pullInward ? (innerPositions[index] ?? innerPositions[0]) : (outerPositions[index] ?? outerPositions[0]);
+}
+
+function buildFileNodes(brief: MissionBrief, mission: MissionRun, selectedPaths: string[], stage: MissionStage) {
   const routeFiles = brief.routePlan.fileMap.map((entry) => entry.path);
   const targetedFiles = mission.artifacts.executionPlan?.targetFiles ?? [];
   const changedFiles = mission.artifacts.changedFiles.map((file) => file.path);
   const uniqueFiles = [...new Set([...changedFiles, ...targetedFiles, ...routeFiles])].slice(0, 6);
-  const positions = [
-    { x: 15, y: 17, anchorX: 210, anchorY: 126 },
-    { x: 70, y: 15, anchorX: 790, anchorY: 118 },
-    { x: 79, y: 44, anchorX: 860, anchorY: 286 },
-    { x: 67, y: 74, anchorX: 760, anchorY: 510 },
-    { x: 18, y: 72, anchorX: 220, anchorY: 494 },
-    { x: 10, y: 44, anchorX: 150, anchorY: 302 }
-  ];
 
   return uniqueFiles.map((path, index) => {
     const changed = mission.artifacts.changedFiles.find((file) => file.path === path);
     const targeted = targetedFiles.includes(path);
     const routed = brief.routePlan.fileMap.find((entry) => entry.path === path);
     const state = changed ? "changed" : targeted ? "targeted" : routed ? routed.phase === "verify" ? "verify" : routed.phase === "shape" ? "targeted" : "scanned" : "scanned";
-    const position = positions[index] ?? positions[0];
+    const position = getPositionsForStage(stage, state, index);
     const isSelected = selectedPaths.includes(path);
 
     return {
       path,
       label:
-        state === "changed" ? "Changed" : state === "targeted" ? "Targeted" : state === "verify" ? "Verification" : "Scanned",
+        stage === "proof_delivered" && state === "changed" ? "Delivered"
+        : stage === "verification" && state === "changed" ? "Verifying"
+        : state === "changed" ? "Writing"
+        : state === "targeted" ? "Reading"
+        : state === "verify" ? "Checking"
+        : "Scanned",
       state: `${state}${isSelected ? " selected" : ""}`,
       summary:
         changed?.summary ??
         routed?.reason ??
-        (targeted ? "The execution plan is routed through this file." : "This surfaced during repo scan and route framing."),
+        (targeted ? "The execution plan is routed through this file." : "Surfaced during repo scan."),
       ...position
     };
   });
