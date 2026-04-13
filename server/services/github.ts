@@ -57,6 +57,29 @@ export function parseGitHubTarget(inputUrl: string): RepoTarget {
   };
 }
 
+/** Links for opening the repo / compare page after you push a branch (Cascade does not open PRs server-side). */
+export function githubHandoffFromRepoUrl(repoUrl: string): {
+  repositoryUrl: string;
+  compareBranchesUrl: string;
+} | null {
+  try {
+    const url = new URL(repoUrl.startsWith("http") ? repoUrl : `https://${repoUrl}`);
+    if (url.hostname !== "github.com") {
+      return null;
+    }
+    const segments = url.pathname.split("/").filter(Boolean);
+    if (segments.length < 2) {
+      return null;
+    }
+    const owner = segments[0];
+    const repo = segments[1].replace(/\.git$/, "");
+    const base = `https://github.com/${owner}/${repo}`;
+    return { repositoryUrl: base, compareBranchesUrl: `${base}/compare` };
+  } catch {
+    return null;
+  }
+}
+
 export async function cloneRepository(repoTarget: RepoTarget) {
   const baseDir = path.join(os.tmpdir(), "cascade");
   const workspace = path.join(baseDir, `${repoTarget.owner}-${repoTarget.repo}-${Date.now()}`);

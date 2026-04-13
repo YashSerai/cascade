@@ -156,6 +156,11 @@ export interface PullRequestDraft {
   title: string;
   summary: string;
   checklist: string[];
+  /** Shown when the server does not create a GitHub PR (normal for v1). */
+  handoffNote?: string;
+  repositoryUrl?: string;
+  /** GitHub compare page — use after you push a branch with these changes. */
+  compareBranchesUrl?: string;
 }
 
 export interface LogEntry {

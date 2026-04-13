@@ -126,6 +126,23 @@ export function TechnicalProofDrawer({ brief, mission, open, onClose }: Technica
             <h3>PR draft</h3>
             {mission.artifacts.pullRequestDraft ? (
               <div className="drawer-stack">
+                {mission.artifacts.pullRequestDraft.handoffNote ? (
+                  <p className="drawer-muted">{mission.artifacts.pullRequestDraft.handoffNote}</p>
+                ) : null}
+                {(mission.artifacts.pullRequestDraft.repositoryUrl || mission.artifacts.pullRequestDraft.compareBranchesUrl) && (
+                  <p className="drawer-link-row">
+                    {mission.artifacts.pullRequestDraft.repositoryUrl ? (
+                      <a href={mission.artifacts.pullRequestDraft.repositoryUrl} target="_blank" rel="noreferrer">
+                        Repository
+                      </a>
+                    ) : null}
+                    {mission.artifacts.pullRequestDraft.compareBranchesUrl ? (
+                      <a href={mission.artifacts.pullRequestDraft.compareBranchesUrl} target="_blank" rel="noreferrer">
+                        Compare branches
+                      </a>
+                    ) : null}
+                  </p>
+                )}
                 <p>{mission.artifacts.pullRequestDraft.title}</p>
                 <ul className="drawer-bullets">
                   {mission.artifacts.pullRequestDraft.checklist.map((item) => (

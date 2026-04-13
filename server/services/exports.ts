@@ -1,4 +1,22 @@
-import type { MissionRun } from "../../shared/types";
+import type { MissionRun, PullRequestDraft } from "../../shared/types";
+
+function pullRequestDraftMarkdownSection(draft: PullRequestDraft): string[] {
+  const lines: string[] = ["## Pull request (draft — not opened on GitHub)", ""];
+  if (draft.handoffNote) {
+    lines.push(draft.handoffNote, "");
+  }
+  if (draft.repositoryUrl) {
+    lines.push(`- Repository: ${draft.repositoryUrl}`);
+  }
+  if (draft.compareBranchesUrl) {
+    lines.push(`- Compare branches (after you push): ${draft.compareBranchesUrl}`);
+  }
+  if (draft.repositoryUrl || draft.compareBranchesUrl) {
+    lines.push("");
+  }
+  lines.push(`**${draft.title}**`, "", draft.summary, "", ...draft.checklist.map((item) => `- ${item}`), "");
+  return lines;
+}
 
 export function buildBriefMarkdown(mission: MissionRun) {
   const { brief, artifacts } = mission;
@@ -34,9 +52,17 @@ export function buildBriefMarkdown(mission: MissionRun) {
       ? artifacts.checks.map((check) => `- ${check.name}: ${check.status}${check.command ? ` (${check.command})` : ""}`)
       : ["- No checks recorded."]),
     "",
+    "## Visual proof",
+    ...(artifacts.screenshots.length > 0
+      ? artifacts.screenshots.map((shot) => `- [${shot.label}](${shot.url})`)
+      : [
+          "- No screenshots were captured in this run. Verification is install/build only; capture UI shots locally with `npm run dev` if needed."
+        ]),
+    "",
     "## Summary",
     artifacts.summary,
     "",
+    ...(artifacts.pullRequestDraft ? pullRequestDraftMarkdownSection(artifacts.pullRequestDraft) : []),
     "## Blockers",
     ...(artifacts.blockers.length > 0 ? artifacts.blockers.map((item) => `- ${item}`) : ["- None."]),
     "",

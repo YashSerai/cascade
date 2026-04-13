@@ -168,6 +168,26 @@ export function ProofVault({
           <ul className="proof-list">
             {mission.artifacts.pullRequestDraft ? (
               <>
+                {mission.artifacts.pullRequestDraft.handoffNote ? (
+                  <li className="proof-handoff-note">
+                    <div className="proof-handoff-text">{mission.artifacts.pullRequestDraft.handoffNote}</div>
+                    {(mission.artifacts.pullRequestDraft.repositoryUrl ||
+                      mission.artifacts.pullRequestDraft.compareBranchesUrl) && (
+                      <div className="proof-handoff-links">
+                        {mission.artifacts.pullRequestDraft.repositoryUrl ? (
+                          <a href={mission.artifacts.pullRequestDraft.repositoryUrl} target="_blank" rel="noreferrer">
+                            Repository
+                          </a>
+                        ) : null}
+                        {mission.artifacts.pullRequestDraft.compareBranchesUrl ? (
+                          <a href={mission.artifacts.pullRequestDraft.compareBranchesUrl} target="_blank" rel="noreferrer">
+                            Compare branches
+                          </a>
+                        ) : null}
+                      </div>
+                    )}
+                  </li>
+                ) : null}
                 <li>
                   <strong>{mission.artifacts.pullRequestDraft.title}</strong>
                   <span>{mission.artifacts.pullRequestDraft.summary}</span>
@@ -199,7 +219,11 @@ export function ProofVault({
         ) : (
           <article className="proof-card cinematic-panel proof-card-wide">
             <p className="section-tag muted">Visual proof</p>
-            <h3>Proof shots to capture</h3>
+            <h3>No automated screenshots</h3>
+            <p className="proof-visual-note">
+              Verification runs install and build only; it does not start a browser or attach images. For UI work, run the app locally (
+              <code>npm run dev</code>) and capture before/after shots using the checklist.
+            </p>
             <ul className="proof-list">
               {brief.routePlan.proofTargets.map((target) => (
                 <li key={target}>

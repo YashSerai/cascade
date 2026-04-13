@@ -1165,6 +1165,67 @@ a {
   font-size: 0.86rem;
 }
 
+.proof-handoff-text {
+  color: var(--muted);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0 0 0.75rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.proof-handoff-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+
+.proof-handoff-links a {
+  color: var(--accent-warm, #f4a261);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.88rem;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.proof-visual-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+}
+
+.proof-visual-note code {
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.drawer-muted {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  margin: 0 0 0.5rem;
+}
+
+.drawer-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.drawer-link-row a {
+  color: var(--accent-warm, #f4a261);
+  font-size: 0.86rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .screenshot-chip {
   padding: 0.9rem 1rem;
   border-radius: 16px;

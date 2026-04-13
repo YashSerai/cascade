@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { ChangedFile, CheckArtifact, ExecutionPlan } from "../../../shared/types";
 import { resolveApiKey, generateStructuredJson } from "../model";
 import { getNpmCommand, readTextIfExists, runCommand, trimOutput, writeFileSafe } from "../files";
+import { githubHandoffFromRepoUrl } from "../github";
 import type { ExecutionContext, ExecutionProvider, PlanResult, RunChecksOptions } from "./provider";
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -359,6 +360,7 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
   async collectArtifacts(_context: ExecutionContext, _plan: PlanResult, changedFiles: ChangedFile[], checks: CheckArtifact[]) {
     const blockers = checks.filter((check) => check.status === "failed").map((check) => `${check.name} failed. Review the verification output.`);
     const passedChecks = checks.filter((check) => check.status === "passed").map((check) => check.name);
+    const gh = githubHandoffFromRepoUrl(_context.brief.repoTarget.repoUrl);
     const pullRequestDraft = {
       title: _context.brief.routePlan.prTitle || _context.brief.selectedObjective,
       summary:
@@ -369,7 +371,10 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
         `Changed files: ${changedFiles.map((file) => file.path).join(", ") || "none yet"}.`,
         `Verification: ${checks.map((check) => `${check.name}:${check.status}`).join(", ") || "none recorded"}.`,
         `Proof targets: ${_context.brief.routePlan.proofTargets.join(" | ")}`
-      ]
+      ],
+      handoffNote:
+        "No GitHub pull request was opened. Cascade only patches a temporary clone. Push a branch with these changes, then use Compare to open a PR.",
+      ...(gh ? { repositoryUrl: gh.repositoryUrl, compareBranchesUrl: gh.compareBranchesUrl } : {})
     };
     return {
       summary:
