@@ -251,12 +251,17 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
   async runChecks(context: ExecutionContext): Promise<CheckArtifact[]> {
     const checks: CheckArtifact[] = [];
     const npm = getNpmCommand();
-    const installResult = await runCommand(npm, ["install", "--no-audit", "--no-fund"], context.workspace, 420000);
+    // Cloud Run sets NODE_ENV=production; npm then skips devDependencies and TypeScript
+    // builds fail without @types/react. Force a dev-capable install for verification.
+    const installArgs = ["install", "--no-audit", "--no-fund", "--include=dev"];
+    const installResult = await runCommand(npm, installArgs, context.workspace, 420000, {
+      env: { ...process.env, NODE_ENV: "development" }
+    });
 
     checks.push({
       name: "install",
       status: installResult.ok ? "passed" : "failed",
-      command: "npm install --no-audit --no-fund",
+      command: "npm install --no-audit --no-fund --include=dev",
       output: trimOutput(`${installResult.stdout}\n${installResult.stderr}\n${installResult.message ?? ""}`.trim())
     });
 

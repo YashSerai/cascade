@@ -74,9 +74,26 @@ export function getNpmCommand() {
   return process.platform === "win32" ? "npm.cmd" : "npm";
 }
 
-export async function runCommand(command: string, args: string[], cwd: string, timeout = 300000) {
+export type RunCommandOptions = {
+  /** Merged over process.env for this invocation only. */
+  env?: NodeJS.ProcessEnv;
+};
+
+export async function runCommand(
+  command: string,
+  args: string[],
+  cwd: string,
+  timeout = 300000,
+  options?: RunCommandOptions
+) {
+  const env = options?.env ? { ...process.env, ...options.env } : process.env;
   try {
-    const { stdout, stderr } = await execFileAsync(command, args, { cwd, timeout, maxBuffer: 1024 * 1024 * 8 });
+    const { stdout, stderr } = await execFileAsync(command, args, {
+      cwd,
+      timeout,
+      maxBuffer: 1024 * 1024 * 8,
+      env
+    });
     return { ok: true, stdout, stderr };
   } catch (error) {
     const stdout = typeof error === "object" && error && "stdout" in error ? String((error as { stdout?: string }).stdout ?? "") : "";

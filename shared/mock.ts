@@ -18,7 +18,7 @@ export const seededBrief: MissionBrief = {
     packageManager: "npm",
     supportLevel: "supported",
     supportReason: "Detected a standard React/Vite app with npm scripts for build and test.",
-    installCommand: "npm install --no-audit --no-fund",
+    installCommand: "npm install --no-audit --no-fund --include=dev",
     buildCommand: "npm run build",
     testCommand: "npm run test",
     importantFiles: ["src/App.tsx", "src/components/Hero.tsx", "src/styles.css"],
@@ -172,7 +172,7 @@ export const seededMission: MissionRun = {
     executionPlan: {
       approach: "Tighten the onboarding story, add progress states, and keep the handoff obvious.",
       targetFiles: ["src/App.tsx", "src/styles.css"],
-      verificationStrategy: ["npm install --no-audit --no-fund", "npm run build"],
+      verificationStrategy: ["npm install --no-audit --no-fund --include=dev", "npm run build"],
       notes: ["Keep the end-state visually obvious for a 60-second demo."]
     },
     changedFiles: [

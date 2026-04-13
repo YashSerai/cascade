@@ -31,7 +31,8 @@ export async function scanLocalWorkspace(workspace: string, repoTarget: RepoTarg
   const packageManager = detectPackageManager(packageJson, files);
   const importantFiles = pickImportantFiles(files, repoTarget.targetPath);
   const importantFileSummaries = await summarizeImportantFiles(workspace, importantFiles);
-  const installCommand = packageManager === "npm" ? "npm install --no-audit --no-fund" : undefined;
+  const installCommand =
+    packageManager === "npm" ? "npm install --no-audit --no-fund --include=dev" : undefined;
   const buildCommand = scripts.build ? "npm run build" : undefined;
   const testCommand = scripts.test && scripts.test !== "echo \"Error: no test specified\" && exit 1" ? "npm run test" : undefined;
   const supportLevel = detectSupportLevel({
