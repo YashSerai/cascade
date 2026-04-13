@@ -8,7 +8,7 @@ interface MissionComposerProps {
   apiKey: string;
   busyState: "idle" | "analyzing" | "launching";
   error: string;
-  brief: MissionBrief;
+  brief: MissionBrief | null;
   liveBrief: MissionBrief | null;
   onModeChange: (mode: MissionMode) => void;
   onRepoUrlChange: (value: string) => void;
@@ -38,10 +38,21 @@ export function MissionComposer(props: MissionComposerProps) {
     onSelectCandidate
   } = props;
 
-  const support = getSupportPresentation(brief.repoScan.supportLevel);
   const modeCopy = modePresentation[mode];
   const isLaunchReady = liveBrief !== null;
   const needsExecutionKey = isLaunchReady && liveBrief?.modelSelection.keyMode === "none" && !apiKey.trim();
+  const support = brief ? getSupportPresentation(brief.repoScan.supportLevel) : null;
+  const routeLaneLabel = liveBrief
+    ? liveBrief.modelSelection.provider === "vertex-ai"
+      ? liveBrief.modelSelection.keyMode === "server"
+        ? "Hosted Vertex lane"
+        : "BYOK Gemini lane"
+      : liveBrief.modelSelection.keyMode === "server"
+        ? "Hosted Gemini lane"
+        : liveBrief.modelSelection.keyMode === "user"
+          ? "BYOK Gemini lane"
+          : "Planning lane"
+    : "Route appears after analyze";
 
   return (
     <section className="composer-section" id="mission-composer">
@@ -55,7 +66,7 @@ export function MissionComposer(props: MissionComposerProps) {
         </p>
       </div>
 
-      <div className="composer-grid">
+      <div className={`composer-grid ${brief ? "route-ready" : "route-idle"}`}>
         <div className="composer-form cinematic-panel">
           <div className="mode-switch">
             {(Object.keys(modePresentation) as MissionMode[]).map((item) => (
@@ -128,60 +139,80 @@ export function MissionComposer(props: MissionComposerProps) {
           {error ? <p className="error-message">{error}</p> : null}
         </div>
 
-        <aside className="composer-readiness cinematic-panel">
-          <div className="readiness-header">
-            <div>
-              <p className="section-tag muted">{liveBrief ? "Route locked" : "Route preview"}</p>
-              <h3>{brief.selectedObjective}</h3>
+        {brief ? (
+          <aside className="composer-readiness cinematic-panel revealed-panel">
+            <div className="readiness-header">
+              <div>
+                <p className="section-tag muted">{liveBrief ? "Route locked" : "Route drafted"}</p>
+                <h3>{brief.selectedObjective}</h3>
+              </div>
+              <span className={`status-pill ${brief.repoScan.supportLevel}`}>{support?.label}</span>
             </div>
-            <span className={`status-pill ${brief.repoScan.supportLevel}`}>{support.label}</span>
-          </div>
 
-          <p className="readiness-copy">{brief.rationale}</p>
+            <div className="route-ribbon">
+              <span>{routeLaneLabel}</span>
+              <strong>{brief.missionTitle}</strong>
+              <small>{brief.rationale}</small>
+            </div>
 
-          <div className="readiness-grid">
-            <div className="readiness-tile">
-              <span>Lane</span>
-              <strong>{modeCopy.label}</strong>
-              <small>{modeCopy.description}</small>
+            <div className="readiness-grid">
+              <div className="readiness-tile">
+                <span>Lane</span>
+                <strong>{modeCopy.label}</strong>
+                <small>{modeCopy.description}</small>
+              </div>
+              <div className="readiness-tile">
+                <span>Support</span>
+                <strong>{support?.label}</strong>
+                <small>{support?.body}</small>
+              </div>
+              <div className="readiness-tile">
+                <span>Primary surface</span>
+                <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
+                <small>This is where the change should read first.</small>
+              </div>
+              <div className="readiness-tile">
+                <span>Payoff</span>
+                <strong>{brief.acceptanceCriteria[0] ?? "The result should feel clear at a glance."}</strong>
+                <small>{brief.acceptanceCriteria[1] ?? "The reveal should be obvious without reading a diff."}</small>
+              </div>
             </div>
-            <div className="readiness-tile">
-              <span>Support</span>
-              <strong>{support.label}</strong>
-              <small>{support.body}</small>
-            </div>
-            <div className="readiness-tile">
-              <span>Primary surface</span>
-              <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
-              <small>This is where the change should read first.</small>
-            </div>
-            <div className="readiness-tile">
-              <span>Payoff</span>
-              <strong>{brief.acceptanceCriteria[0] ?? "The result should feel clear at a glance."}</strong>
-              <small>{brief.acceptanceCriteria[1] ?? "The reveal should be obvious without reading a diff."}</small>
-            </div>
-          </div>
 
-          <div className="readiness-block">
-            <span>Success looks like</span>
-            <ul>
-              {brief.acceptanceCriteria.slice(0, 3).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="readiness-block">
-            <span>Alternate routes</span>
-            <div className="candidate-grid">
-              {brief.candidateFeatures.map((feature) => (
-                <button key={feature} type="button" className="candidate-button" onClick={() => onSelectCandidate(feature)}>
-                  {feature}
-                </button>
-              ))}
+            <div className="readiness-block">
+              <span>Success looks like</span>
+              <ul>
+                {brief.acceptanceCriteria.slice(0, 3).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
             </div>
-          </div>
-        </aside>
+
+            <div className="readiness-block">
+              <span>Alternate routes</span>
+              <div className="candidate-grid">
+                {brief.candidateFeatures.map((feature) => (
+                  <button key={feature} type="button" className="candidate-button" onClick={() => onSelectCandidate(feature)}>
+                    {feature}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </aside>
+        ) : (
+          <aside className="composer-placeholder cinematic-panel">
+            <p className="section-tag muted">Route hidden</p>
+            <h3>The route reveal starts after analysis.</h3>
+            <p className="readiness-copy">
+              Give Cascade a public GitHub repo and a concrete ask. The route, live theater, and proof vault stay out of
+              the way until they have something real to show.
+            </p>
+            <div className="placeholder-pills">
+              <span className="signal-pill">Repo scan first</span>
+              <span className="signal-pill">Route locks second</span>
+              <span className="signal-pill">Live run unlocks theater</span>
+            </div>
+          </aside>
+        )}
       </div>
     </section>
   );

@@ -10,7 +10,7 @@ describe("model selection", () => {
   });
 
   it("builds the documented default model policy", () => {
-    const selection = createEmptyModelSelection("none");
+    const selection = createEmptyModelSelection("none", "none");
     expect(selection.requestedModel).toBe(PRIMARY_MODEL);
     expect(selection.fallbackModel).toBe(FALLBACK_MODEL);
     expect(selection.fallbackUsed).toBe(false);

@@ -238,11 +238,18 @@ export function getModelLabel(brief: MissionBrief) {
 }
 
 export function getModelLane(brief: MissionBrief) {
+  const laneLabel =
+    brief.modelSelection.provider === "vertex-ai"
+      ? "Vertex lane"
+      : brief.modelSelection.provider === "gemini-developer"
+        ? "Gemini lane"
+        : "Planning lane";
+
   switch (brief.modelSelection.keyMode) {
     case "server":
-      return "Hosted lane";
+      return `Hosted ${laneLabel}`;
     case "user":
-      return "Bring-your-own lane";
+      return `Bring-your-own ${laneLabel}`;
     case "none":
       return "Planning lane";
   }

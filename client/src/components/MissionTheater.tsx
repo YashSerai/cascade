@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { AgentRole, MissionBrief, MissionRun } from "../../../shared/types";
 import {
   agentOrder,
@@ -26,8 +27,9 @@ export function MissionTheater({
 }: MissionTheaterProps) {
   const stageInfo = stagePresentation[mission.stage];
   const selectedCrew = getCrewSpotlight(selectedCrewRole, brief, mission);
-  const recentLogs = mission.artifacts.logs.slice(-4).reverse();
+  const timeline = mission.artifacts.logs.slice(-8);
   const primaryBlocker = mission.artifacts.blockers[0] ?? "";
+  const fileNodes = buildFileNodes(brief, mission);
 
   return (
     <section className="theater-section" id="mission-theater">
@@ -42,9 +44,21 @@ export function MissionTheater({
       </div>
 
       <div className="theater-shell cinematic-panel">
-        <div className="theater-copy">
-          <p className="section-tag muted">{stageInfo.chapter}</p>
-          <h3>{stageInfo.title}</h3>
+        <div className="theater-storyline">
+          <div className="mission-marquee">
+            <div>
+              <span className="section-tag muted">{stageInfo.chapter}</span>
+              <h3>{brief.selectedObjective}</h3>
+            </div>
+            <span className={`status-pill ${mission.stage === "mission_blocked" ? "blocked" : brief.repoScan.supportLevel}`}>
+              {mission.stage === "proof_delivered"
+                ? "Proof packaged"
+                : mission.stage === "mission_blocked"
+                  ? "Blocker surfaced"
+                  : "Run in motion"}
+            </span>
+          </div>
+
           <p className="theater-copy-body">{stageInfo.description}</p>
 
           <div className="theater-stat-row">
@@ -57,7 +71,7 @@ export function MissionTheater({
               <strong>{stageInfo.chapter}</strong>
             </div>
             <div className="theater-stat">
-              <span>Surface</span>
+              <span>Primary surface</span>
               <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
             </div>
           </div>
@@ -84,11 +98,35 @@ export function MissionTheater({
             </div>
           </article>
 
-          <div className="signal-banner">
-            <span>What should feel different</span>
-            <strong>{brief.acceptanceCriteria[0] ?? "The product should feel clearer immediately."}</strong>
-            <small>{stageInfo.pulse}</small>
-          </div>
+          <article className="mission-timeline">
+            <div className="run-ledger-header">
+              <div>
+                <span>Mission timeline</span>
+                <strong>Each beat as the run advances</strong>
+              </div>
+              <small>{timeline.length > 0 ? `${timeline.length} recorded beats` : "Waiting for launch"}</small>
+            </div>
+
+            {timeline.length > 0 ? (
+              <div className="timeline-list">
+                {timeline.map((log, index) => (
+                  <article
+                    key={`${log.timestamp}-${log.message}`}
+                    className={`timeline-card ${log.level}`}
+                    style={{ animationDelay: `${index * 80}ms` }}
+                  >
+                    <div className="timeline-glyph" aria-hidden="true" />
+                    <div>
+                      <span>{new Date(log.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
+                      <strong>{log.message}</strong>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-state">Once the live run starts, the theater will stream concrete mission beats here.</p>
+            )}
+          </article>
 
           {primaryBlocker ? (
             <article className="run-blocker">
@@ -97,71 +135,93 @@ export function MissionTheater({
               <p>Clear this and rerun to unlock execution, checks, and proof artifacts.</p>
             </article>
           ) : null}
-
-          <article className="run-ledger">
-            <div className="run-ledger-header">
-              <div>
-                <span>Run ledger</span>
-                <strong>What changed in this run</strong>
-              </div>
-              <small>{mission.stage === "objective_received" ? "Waiting for launch" : "Streaming mission state"}</small>
-            </div>
-
-            {recentLogs.length > 0 ? (
-              <div className="run-log-stack">
-                {recentLogs.map((log) => (
-                  <article key={`${log.timestamp}-${log.message}`} className={`run-log ${log.level}`}>
-                    <span>{log.level}</span>
-                    <p>{log.message}</p>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className="empty-state">Once the live run starts, stage changes and blockers will land here.</p>
-            )}
-          </article>
         </div>
 
-        <div className="constellation-panel">
-          <div className="constellation-field">
-            <div className="constellation-grid" />
-            <svg className="journey-wireframe" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
-              <line x1="500" y1="310" x2="190" y2="138" />
-              <line x1="500" y1="310" x2="808" y2="146" />
-              <line x1="500" y1="310" x2="770" y2="488" />
-              <line x1="500" y1="310" x2="210" y2="492" />
-            </svg>
-
-            <div className="mission-core-shell">
-              <div className="mission-core">
-                <span>Mission core</span>
-                <strong>{brief.selectedObjective}</strong>
-                <small>{brief.implementationBrief}</small>
+        <div className="theater-command-deck">
+          <article className="crew-deck">
+            <div className="run-ledger-header">
+              <div>
+                <span>Agent deck</span>
+                <strong>Who owns the mission right now</strong>
               </div>
+              <small>Tap a role to refocus the theater</small>
             </div>
 
-            {agentOrder.map((role) => {
-              const spotlight = getCrewSpotlight(role, brief, mission);
-              const selected = role === selectedCrewRole;
+            <div className="agent-deck-grid">
+              {agentOrder.map((role, index) => {
+                const spotlight = getCrewSpotlight(role, brief, mission);
+                const selected = role === selectedCrewRole;
 
-              return (
-                <button
-                  key={role}
-                  type="button"
-                  className={`agent-node ${spotlight.statusTone} ${selected ? "selected" : ""} agent-${role}`}
-                  onClick={() => onSelectCrew(role)}
-                  aria-pressed={selected}
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    className={`agent-node ${spotlight.statusTone} ${selected ? "selected" : ""}`}
+                    onClick={() => onSelectCrew(role)}
+                    aria-pressed={selected}
+                    style={{ animationDelay: `${index * 90}ms` }}
+                  >
+                    <span className="agent-node-status">{spotlight.statusLabel}</span>
+                    <strong>{spotlight.name}</strong>
+                    <small>{mission.agents[role].latestAction}</small>
+                    <div className="agent-progress-track" aria-hidden="true">
+                      <div className="agent-progress-fill" style={{ width: `${mission.agents[role].progress}%` }} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
+          <article className="file-orbit">
+            <div className="run-ledger-header">
+              <div>
+                <span>Surface graph</span>
+                <strong>Files the mission is reading and changing</strong>
+              </div>
+              <small>{fileNodes.length} visible surfaces</small>
+            </div>
+
+            <div className="orbit-stage">
+              <svg className="orbit-lines" viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true">
+                {fileNodes.map((node) => (
+                  <line key={node.path} x1="500" y1="320" x2={node.anchorX} y2={node.anchorY} />
+                ))}
+              </svg>
+
+              <div className="orbit-core">
+                <span>Repo core</span>
+                <strong>{brief.repoTarget.repo}</strong>
+                <small>{brief.repoScan.framework}</small>
+              </div>
+
+              {fileNodes.map((node, index) => (
+                <article
+                  key={node.path}
+                  className={`file-node ${node.state}`}
+                  style={
+                    {
+                      "--x": `${node.x}%`,
+                      "--y": `${node.y}%`,
+                      animationDelay: `${index * 110}ms`
+                    } as CSSProperties
+                  }
                 >
-                  <span className="agent-node-status">{spotlight.statusLabel}</span>
-                  <strong>{spotlight.name}</strong>
-                </button>
-              );
-            })}
-          </div>
+                  <span>{node.label}</span>
+                  <strong>{node.path}</strong>
+                  <small>{node.summary}</small>
+                </article>
+              ))}
+            </div>
+          </article>
 
           <div className="chapter-rail">
-            {chapters.map((chapter) => (
-              <article key={chapter.stage} className={`chapter-card ${chapter.state}`}>
+            {chapters.map((chapter, index) => (
+              <article
+                key={chapter.stage}
+                className={`chapter-card ${chapter.state}`}
+                style={{ animationDelay: `${index * 70}ms` }}
+              >
                 <span>{chapter.chapter}</span>
                 <p>{chapter.pulse}</p>
               </article>
@@ -171,4 +231,36 @@ export function MissionTheater({
       </div>
     </section>
   );
+}
+
+function buildFileNodes(brief: MissionBrief, mission: MissionRun) {
+  const importantFiles = brief.repoScan.importantFiles.slice(0, 6);
+  const targetedFiles = mission.artifacts.executionPlan?.targetFiles ?? [];
+  const changedFiles = mission.artifacts.changedFiles.map((file) => file.path);
+  const uniqueFiles = [...new Set([...changedFiles, ...targetedFiles, ...importantFiles])].slice(0, 6);
+  const positions = [
+    { x: 15, y: 17, anchorX: 210, anchorY: 126 },
+    { x: 70, y: 15, anchorX: 790, anchorY: 118 },
+    { x: 79, y: 44, anchorX: 860, anchorY: 286 },
+    { x: 67, y: 74, anchorX: 760, anchorY: 510 },
+    { x: 18, y: 72, anchorX: 220, anchorY: 494 },
+    { x: 10, y: 44, anchorX: 150, anchorY: 302 }
+  ];
+
+  return uniqueFiles.map((path, index) => {
+    const changed = mission.artifacts.changedFiles.find((file) => file.path === path);
+    const targeted = targetedFiles.includes(path);
+    const state = changed ? "changed" : targeted ? "targeted" : "scanned";
+    const position = positions[index] ?? positions[0];
+
+    return {
+      path,
+      label: state === "changed" ? "Changed" : state === "targeted" ? "Targeted" : "Scanned",
+      state,
+      summary:
+        changed?.summary ??
+        (targeted ? "The execution plan is routed through this file." : "This surfaced during repo scan and route framing."),
+      ...position
+    };
+  });
 }

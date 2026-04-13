@@ -18,9 +18,11 @@ export async function runMission(missionId: string, apiKey?: string) {
     updateStage(missionId, "recon");
     setAgent(missionId, "pm", "done", "Framed the mission and locked the objective.", 100);
     setAgent(missionId, "architect", "active", "Shallow-cloning the repository and mapping the change surface.", 26);
+    appendLog(missionId, "info", `Clone start: ${mission.brief.repoTarget.repoUrl}`);
 
     workspace = await cloneRepository(mission.brief.repoTarget);
 
+    appendLog(missionId, "info", "Clone finished. Reading the repo shape and supported scripts.");
     appendLog(missionId, "info", `Recon complete. ${mission.brief.repoScan.supportReason}`);
     const latest = store.updateMission(missionId, (current) => ({
       ...current,
@@ -55,6 +57,7 @@ export async function runMission(missionId: string, apiKey?: string) {
 
     setAgent(missionId, "architect", "done", "Locked the plan and selected the files for execution.", 100);
     setAgent(missionId, "executor", "active", "Generating the implementation patch with Gemini.", 38);
+    appendLog(missionId, "info", "Plan draft started. Generating a constrained patch against the approved files.");
 
     const plan = await provider.planTask({ workspace, brief: latest.brief, apiKey });
     store.updateMission(missionId, (current) => ({
@@ -65,11 +68,19 @@ export async function runMission(missionId: string, apiKey?: string) {
         summary: "Plan locked. Executor is applying the patch."
       }
     }));
+    appendLog(missionId, "info", `Plan locked. Target files: ${plan.plan.targetFiles.join(", ")}.`);
 
     updateStage(missionId, "execution_underway");
-    appendLog(missionId, "info", `Plan locked for ${plan.plan.targetFiles.join(", ")}.`);
+    appendLog(missionId, "info", "Execution started. Writing the patch into the temporary workspace.");
 
     const changedFiles = await provider.executeTask({ workspace, brief: latest.brief, apiKey }, plan);
+    appendLog(
+      missionId,
+      "info",
+      `Patch applied. ${changedFiles.length} file${changedFiles.length === 1 ? "" : "s"} changed: ${changedFiles
+        .map((file) => file.path)
+        .join(", ")}.`
+    );
     setAgent(missionId, "executor", "done", "Applied the implementation patch and staged proof artifacts.", 100);
     setAgent(missionId, "qa", "active", "Running install and verification commands.", 42);
     store.updateMission(missionId, (current) => ({
@@ -81,10 +92,27 @@ export async function runMission(missionId: string, apiKey?: string) {
         summary: "Patch applied. Running verification."
       }
     }));
+    appendLog(missionId, "info", "Verification started. Installing repo dependencies and running the strongest detected script.");
 
     const checks = await provider.runChecks({ workspace, brief: latest.brief, apiKey });
+    for (const check of checks) {
+      appendLog(
+        missionId,
+        check.status === "failed" ? "error" : check.status === "skipped" ? "warn" : "info",
+        check.command
+          ? `${check.name} ${check.status}. Command: ${check.command}.`
+          : `${check.name} ${check.status}.`
+      );
+    }
     const collected = await provider.collectArtifacts({ workspace, brief: latest.brief, apiKey }, plan, changedFiles, checks);
     const stage = collected.blockers.length > 0 ? "mission_blocked" : "proof_delivered";
+    appendLog(
+      missionId,
+      collected.blockers.length > 0 ? "warn" : "info",
+      collected.blockers.length > 0
+        ? "Proof packaged with blockers preserved for the next pass."
+        : "Proof packaged. The mission is ready for handoff."
+    );
 
     setAgent(
       missionId,

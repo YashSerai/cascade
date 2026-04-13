@@ -54,7 +54,7 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
       throw new Error("Cascade could not find a safe set of editable UI files in this repository.");
     }
 
-    const { apiKey, keyMode } = resolveApiKey(context.apiKey);
+    const { apiKey, keyMode, provider, clientOptions } = resolveApiKey(context.apiKey);
     if (!apiKey) {
       throw new Error("Gemini API key missing. Add a server key or provide BYOK in the UI to run execution.");
     }
@@ -62,6 +62,8 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
     const result = await generateStructuredJson({
       apiKey,
       keyMode,
+      provider,
+      clientOptions,
       schema: planSchema,
       responseSchema: planResponseSchema,
       systemInstruction:

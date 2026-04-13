@@ -49,7 +49,8 @@ export const seededBrief: MissionBrief = {
     attemptedModels: ["gemini-3.1-pro-preview"],
     activeModel: "gemini-3.1-pro-preview",
     fallbackUsed: false,
-    keyMode: "server"
+    keyMode: "server",
+    provider: "gemini-developer"
   }
 };
 

@@ -24,6 +24,7 @@ export const agentStatuses = ["idle", "active", "done", "blocked"] as const;
 export type AgentStatus = (typeof agentStatuses)[number];
 
 export type KeyMode = "server" | "user" | "none";
+export type ModelProvider = "gemini-developer" | "vertex-ai" | "none";
 
 export interface RepoTarget {
   inputUrl: string;
@@ -56,6 +57,7 @@ export interface ModelSelection {
   activeModel?: string;
   fallbackUsed: boolean;
   keyMode: KeyMode;
+  provider: ModelProvider;
 }
 
 export interface MissionBrief {

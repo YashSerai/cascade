@@ -51,14 +51,20 @@ export default function App() {
     theaterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [activeMission?.id]);
 
-  const visibleBrief = brief ?? activeMission?.brief ?? seededBrief;
+  const preludeBrief = brief ?? activeMission?.brief ?? seededBrief;
+  const visibleBrief = brief ?? activeMission?.brief ?? null;
   const previewMission = useMemo(
-    () => buildPreviewMission(visibleBrief, Boolean(brief), busyState === "analyzing"),
-    [visibleBrief, brief, busyState]
+    () => buildPreviewMission(preludeBrief, Boolean(brief), busyState === "analyzing"),
+    [preludeBrief, brief, busyState]
   );
   const visibleMission = activeMission ?? previewMission;
   const liveBrief = brief ?? activeMission?.brief ?? null;
   const historyVisible = history.length > 0 ? history : [previewMission];
+  const showTheater = Boolean(brief || activeMission);
+  const showProof = Boolean(
+    activeMission &&
+      ["verification", "proof_delivered", "mission_blocked"].includes(activeMission.stage)
+  );
 
   const missionProgress = useMemo(() => getMissionProgress(visibleMission.stage), [visibleMission.stage]);
   const chapters = useMemo(() => getChapterStates(visibleMission.stage), [visibleMission.stage]);
@@ -144,8 +150,8 @@ export default function App() {
       <div className="scene-noise" />
 
       <Prelude
-        brief={visibleBrief}
-        missionStage={visibleMission.stage}
+        brief={preludeBrief}
+        missionStage={showTheater ? visibleMission.stage : "objective_received"}
         missionProgress={missionProgress}
         onStart={handlePreludeStart}
       />
@@ -171,29 +177,35 @@ export default function App() {
           />
         </section>
 
-        <section ref={theaterRef}>
-          <MissionTheater
-            brief={visibleBrief}
-            mission={visibleMission}
-            chapters={chapters}
-            selectedCrewRole={selectedCrewRole}
-            onSelectCrew={setSelectedCrewRole}
-            onOpenTechnicalProof={() => setShowTechnicalProof(true)}
-          />
-        </section>
+        {showTheater && visibleBrief ? (
+          <section ref={theaterRef} className="revealed-section">
+            <MissionTheater
+              brief={visibleBrief}
+              mission={visibleMission}
+              chapters={chapters}
+              selectedCrewRole={selectedCrewRole}
+              onSelectCrew={setSelectedCrewRole}
+              onOpenTechnicalProof={() => setShowTechnicalProof(true)}
+            />
+          </section>
+        ) : null}
 
-        <ProofVault
-          brief={visibleBrief}
-          mission={visibleMission}
-          activeMissionId={activeMission?.id ?? null}
-          history={historyVisible}
-          onOpenContinuePrompt={handleOpenContinuePrompt}
-          onOpenTechnicalProof={() => setShowTechnicalProof(true)}
-        />
+        {showProof && visibleBrief ? (
+          <section className="revealed-section">
+            <ProofVault
+              brief={visibleBrief}
+              mission={visibleMission}
+              activeMissionId={activeMission?.id ?? null}
+              history={historyVisible}
+              onOpenContinuePrompt={handleOpenContinuePrompt}
+              onOpenTechnicalProof={() => setShowTechnicalProof(true)}
+            />
+          </section>
+        ) : null}
       </main>
 
       <TechnicalProofDrawer
-        brief={visibleBrief}
+        brief={preludeBrief}
         mission={visibleMission}
         open={showTechnicalProof}
         onClose={() => setShowTechnicalProof(false)}

@@ -46,8 +46,8 @@ const analysisResponseSchema = {
 export async function analyzeMission(request: AnalyzeRequest): Promise<MissionBrief> {
   const repoTarget = parseGitHubTarget(request.repoUrl);
   const repoScan = await scanRepository(repoTarget);
-  const { apiKey, keyMode } = resolveApiKey(request.apiKey);
-  const emptySelection = createEmptyModelSelection(keyMode);
+  const { apiKey, keyMode, provider, clientOptions } = resolveApiKey(request.apiKey);
+  const emptySelection = createEmptyModelSelection(keyMode, provider);
 
   if (!apiKey) {
     return buildFallbackBrief({
@@ -71,6 +71,8 @@ export async function analyzeMission(request: AnalyzeRequest): Promise<MissionBr
     const result = await generateStructuredJson({
       apiKey,
       keyMode,
+      provider,
+      clientOptions,
       schema: analysisSchema,
       responseSchema: analysisResponseSchema,
       systemInstruction:
