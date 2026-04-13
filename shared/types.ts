@@ -84,7 +84,15 @@ export interface RouteFileMap {
   phase: "scan" | "shape" | "verify";
 }
 
+export interface RouteSummaryCard {
+  label: string;
+  title: string;
+  body: string;
+}
+
 export interface RoutePlan {
+  ribbonTitle: string;
+  ribbonSummary: string;
   routeHeadline: string;
   routeSummary: string;
   whyThisRoute: string;
@@ -92,6 +100,12 @@ export interface RoutePlan {
   journeyMoments: string[];
   proofTargets: string[];
   fileMap: RouteFileMap[];
+  summaryCards: {
+    lane: RouteSummaryCard;
+    support: RouteSummaryCard;
+    primarySurface: RouteSummaryCard;
+    payoff: RouteSummaryCard;
+  };
   roleFocus: Record<AgentRole, RouteRoleFocus>;
   prTitle: string;
   prSummary: string;

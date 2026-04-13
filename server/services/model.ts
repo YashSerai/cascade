@@ -2,9 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import type { KeyMode, ModelProvider, ModelSelection } from "../../shared/types";
 
-export const PRIMARY_MODEL = "gemini-3.1-pro-preview";
-export const FALLBACK_MODEL = "gemini-3-pro-preview";
-export const SAFETY_MODEL = "gemini-2.5-pro";
+export const PRIMARY_MODEL = "gemini-2.5-pro";
+export const FALLBACK_MODEL = "gemini-2.5-flash";
+export const SAFETY_MODEL = "gemini-2.5-flash";
 
 export function resolveApiKey(providedApiKey?: string) {
   const userKey = providedApiKey?.trim();
@@ -161,7 +161,6 @@ async function generateStructuredJsonViaVertexApi<T>(input: {
           },
           generationConfig: {
             responseMimeType: "application/json",
-            responseSchema: input.responseSchema,
             temperature: 0.4
           }
         })

@@ -49,6 +49,8 @@ export const seededBrief: MissionBrief = {
   impactedAreas: ["src/App.tsx", "navigation shell", "global styles"],
   implementationBrief: "Add a step rail, restart action, and proof states.",
   routePlan: {
+    ribbonTitle: "Clarify the onboarding route and restart states",
+    ribbonSummary: "Cascade reads the app shell, hero, and styles first so the demo lands as one visible onboarding improvement instead of scattered edits.",
     routeHeadline: "Clone the repo, map onboarding friction, and lock a proof-friendly route.",
     routeSummary: "Cascade reads the app shell, hero, and styles first so the demo lands as one visible improvement instead of scattered edits.",
     whyThisRoute: "The main shell already carries the onboarding story, so changing it creates the clearest user-facing shift.",
@@ -68,6 +70,28 @@ export const seededBrief: MissionBrief = {
       { path: "src/components/Hero.tsx", reason: "Supports the first impression and CTA framing.", phase: "scan" },
       { path: "src/styles.css", reason: "Carries the visual state changes and proof cues.", phase: "verify" }
     ],
+    summaryCards: {
+      lane: {
+        label: "Lane",
+        title: "Onboarding rescue route",
+        body: "Turn the first-run pain into one visible product improvement instead of scattered tweaks."
+      },
+      support: {
+        label: "Support",
+        title: "Ready for a live pass",
+        body: "Detected a standard React/Vite app with npm scripts for build and test."
+      },
+      primarySurface: {
+        label: "Primary surface",
+        title: "App shell and onboarding frame",
+        body: "The main shell already carries the onboarding story, so this is where the change will read first."
+      },
+      payoff: {
+        label: "Payoff",
+        title: "Show progress and safe restart points",
+        body: "Users should see their current step immediately and recover without losing context."
+      }
+    },
     roleFocus: {
       pm: {
         role: "pm",
@@ -106,10 +130,10 @@ export const seededBrief: MissionBrief = {
     prSummary: "Tighten the onboarding shell, add visible progress, and package proof for the handoff."
   },
   modelSelection: {
-    requestedModel: "gemini-3.1-pro-preview",
-    fallbackModel: "gemini-3-pro-preview",
-    attemptedModels: ["gemini-3.1-pro-preview"],
-    activeModel: "gemini-3.1-pro-preview",
+    requestedModel: "gemini-2.5-pro",
+    fallbackModel: "gemini-2.5-flash",
+    attemptedModels: ["gemini-2.5-pro"],
+    activeModel: "gemini-2.5-pro",
     fallbackUsed: false,
     keyMode: "server",
     provider: "gemini-developer"
@@ -157,6 +181,11 @@ export const seededMission: MissionRun = {
     ],
     checks: [{ name: "build", status: "passed", command: "npm run build", output: "Build completed successfully in 4.2s." }],
     screenshots: [],
+    pullRequestDraft: {
+      title: "Clarify onboarding route and restart states",
+      summary: "Tighten the onboarding shell, add visible progress, and package proof for the handoff.",
+      checklist: ["Changed files: src/App.tsx, src/styles.css.", "Verification: build:passed.", "Proof targets: Before/after onboarding shell | Verification output card | PR-ready summary with touched files"]
+    },
     logs: [
       { timestamp: now, level: "info", message: "Recon complete. React/Vite repo detected." },
       { timestamp: now, level: "info", message: "Executor is applying the onboarding path to the main UI." }

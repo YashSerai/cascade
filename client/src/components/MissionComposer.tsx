@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { MissionBrief, MissionMode } from "../../../shared/types";
-import { getSupportPresentation, humanizeSurfaceLabel, modePresentation } from "../presentation";
+import { modePresentation } from "../presentation";
 
 interface MissionComposerProps {
   mode: MissionMode;
@@ -57,7 +57,6 @@ export function MissionComposer(props: MissionComposerProps) {
   const modeCopy = modePresentation[mode];
   const isLaunchReady = liveBrief !== null;
   const needsExecutionKey = isLaunchReady && liveBrief?.modelSelection.keyMode === "none" && !apiKey.trim();
-  const support = brief ? getSupportPresentation(brief.repoScan.supportLevel) : null;
   const routeLaneLabel = liveBrief
     ? liveBrief.modelSelection.provider === "vertex-ai"
       ? "Hosted Vertex lane"
@@ -202,40 +201,40 @@ export function MissionComposer(props: MissionComposerProps) {
                 <p className="section-tag muted">Route locked</p>
                 <h3>{brief.routePlan.routeHeadline}</h3>
               </div>
-              <span className={`status-pill ${brief.repoScan.supportLevel}`}>{support?.label}</span>
+              <span className={`status-pill ${brief.repoScan.supportLevel}`}>{brief.routePlan.summaryCards.support.title}</span>
             </div>
 
             <div className="route-ribbon">
               <span>{routeLaneLabel}</span>
-              <strong>{brief.missionTitle}</strong>
-              <small>{brief.routePlan.routeSummary}</small>
+              <strong>{brief.routePlan.ribbonTitle}</strong>
+              <small>{brief.routePlan.ribbonSummary}</small>
             </div>
 
             <div className="readiness-grid">
               <div className="readiness-tile">
-                <span>Lane</span>
-                <strong>{modeCopy.label}</strong>
-                <small>{modeCopy.description}</small>
+                <span>{brief.routePlan.summaryCards.lane.label}</span>
+                <strong>{brief.routePlan.summaryCards.lane.title}</strong>
+                <small>{brief.routePlan.summaryCards.lane.body}</small>
               </div>
               <div className="readiness-tile">
-                <span>Support</span>
-                <strong>{support?.label}</strong>
-                <small>{support?.body}</small>
+                <span>{brief.routePlan.summaryCards.support.label}</span>
+                <strong>{brief.routePlan.summaryCards.support.title}</strong>
+                <small>{brief.routePlan.summaryCards.support.body}</small>
               </div>
               <div className="readiness-tile">
-                <span>Primary surface</span>
-                <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
-                <small>{brief.routePlan.whyThisRoute}</small>
+                <span>{brief.routePlan.summaryCards.primarySurface.label}</span>
+                <strong>{brief.routePlan.summaryCards.primarySurface.title}</strong>
+                <small>{brief.routePlan.summaryCards.primarySurface.body}</small>
               </div>
               <div className="readiness-tile">
-                <span>Payoff</span>
-                <strong>{brief.acceptanceCriteria[0] ?? "The result should feel clear at a glance."}</strong>
-                <small>{brief.routePlan.prSummary}</small>
+                <span>{brief.routePlan.summaryCards.payoff.label}</span>
+                <strong>{brief.routePlan.summaryCards.payoff.title}</strong>
+                <small>{brief.routePlan.summaryCards.payoff.body}</small>
               </div>
             </div>
 
             <div className="readiness-block">
-              <span>Journey moments</span>
+              <span>How Cascade will approach it</span>
               <ul>
                 {brief.routePlan.journeyMoments.map((item) => (
                   <li key={item}>{item}</li>
@@ -244,7 +243,7 @@ export function MissionComposer(props: MissionComposerProps) {
             </div>
 
             <div className="readiness-block">
-              <span>Proof targets</span>
+              <span>What this run should prove</span>
               <div className="candidate-grid">
                 {brief.routePlan.proofTargets.map((target) => (
                   <div key={target} className="candidate-button static">
