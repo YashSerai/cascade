@@ -45,6 +45,10 @@ export interface RepoScan {
   buildCommand?: string;
   testCommand?: string;
   importantFiles: string[];
+  importantFileSummaries: Array<{
+    path: string;
+    summary: string;
+  }>;
   risks: string[];
   rootScripts: string[];
   targetPathHint?: string;
@@ -60,6 +64,39 @@ export interface ModelSelection {
   provider: ModelProvider;
 }
 
+export interface RouteRoleFocus {
+  role: AgentRole;
+  headline: string;
+  currentLens: string;
+  repoHook: string;
+  successSignal: string;
+  filePaths: string[];
+}
+
+export interface RouteStep {
+  label: string;
+  detail: string;
+}
+
+export interface RouteFileMap {
+  path: string;
+  reason: string;
+  phase: "scan" | "shape" | "verify";
+}
+
+export interface RoutePlan {
+  routeHeadline: string;
+  routeSummary: string;
+  whyThisRoute: string;
+  loadingSteps: RouteStep[];
+  journeyMoments: string[];
+  proofTargets: string[];
+  fileMap: RouteFileMap[];
+  roleFocus: Record<AgentRole, RouteRoleFocus>;
+  prTitle: string;
+  prSummary: string;
+}
+
 export interface MissionBrief {
   missionTitle: string;
   mode: MissionMode;
@@ -73,6 +110,7 @@ export interface MissionBrief {
   acceptanceCriteria: string[];
   impactedAreas: string[];
   implementationBrief: string;
+  routePlan: RoutePlan;
   modelSelection: ModelSelection;
 }
 
@@ -100,6 +138,12 @@ export interface ScreenshotArtifact {
   url: string;
 }
 
+export interface PullRequestDraft {
+  title: string;
+  summary: string;
+  checklist: string[];
+}
+
 export interface LogEntry {
   timestamp: string;
   message: string;
@@ -118,6 +162,7 @@ export interface ArtifactBundle {
   changedFiles: ChangedFile[];
   checks: CheckArtifact[];
   screenshots: ScreenshotArtifact[];
+  pullRequestDraft?: PullRequestDraft;
   logs: LogEntry[];
   summary: string;
   blockers: string[];

@@ -145,6 +145,28 @@ export function ProofVault({
           </ul>
         </article>
 
+        <article className="proof-card cinematic-panel">
+          <p className="section-tag muted">Pull request</p>
+          <h3>PR draft</h3>
+          <ul className="proof-list">
+            {mission.artifacts.pullRequestDraft ? (
+              <>
+                <li>
+                  <strong>{mission.artifacts.pullRequestDraft.title}</strong>
+                  <span>{mission.artifacts.pullRequestDraft.summary}</span>
+                </li>
+                {mission.artifacts.pullRequestDraft.checklist.map((item) => (
+                  <li key={item}>
+                    <strong>{item}</strong>
+                  </li>
+                ))}
+              </>
+            ) : (
+              <li className="empty-state">A PR-ready summary will appear after execution packages the mission.</li>
+            )}
+          </ul>
+        </article>
+
         {mission.artifacts.screenshots.length > 0 ? (
           <article className="proof-card cinematic-panel proof-card-wide">
             <p className="section-tag muted">Visual proof</p>
@@ -157,7 +179,19 @@ export function ProofVault({
               ))}
             </div>
           </article>
-        ) : null}
+        ) : (
+          <article className="proof-card cinematic-panel proof-card-wide">
+            <p className="section-tag muted">Visual proof</p>
+            <h3>Proof shots to capture</h3>
+            <ul className="proof-list">
+              {brief.routePlan.proofTargets.map((target) => (
+                <li key={target}>
+                  <strong>{target}</strong>
+                </li>
+              ))}
+            </ul>
+          </article>
+        )}
 
         <article className="proof-card cinematic-panel proof-card-wide">
           <p className="section-tag muted">Mission ledger</p>

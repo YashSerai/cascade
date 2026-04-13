@@ -14,11 +14,9 @@ export default function App() {
   const composerRef = useRef<HTMLElement | null>(null);
   const theaterRef = useRef<HTMLElement | null>(null);
 
-  const [mode, setMode] = useState<MissionMode>("discover");
-  const [repoUrl, setRepoUrl] = useState("https://github.com/vercel/satori");
-  const [promptText, setPromptText] = useState(
-    "First-run onboarding feels confusing. People need a clearer path, visible progress, and an easy restart."
-  );
+  const [mode, setMode] = useState<MissionMode>("mission");
+  const [repoUrl, setRepoUrl] = useState("https://github.com/YashSerai/product-ops-studio");
+  const [promptText, setPromptText] = useState("Add a feature comparison section under pricing.");
   const [apiKey, setApiKey] = useState("");
   const [brief, setBrief] = useState<MissionBrief | null>(null);
   const [activeMission, setActiveMission] = useState<MissionRun | null>(null);
@@ -60,7 +58,7 @@ export default function App() {
   const visibleMission = activeMission ?? previewMission;
   const liveBrief = brief ?? activeMission?.brief ?? null;
   const historyVisible = history.length > 0 ? history : [previewMission];
-  const showTheater = Boolean(brief || activeMission);
+  const showTheater = Boolean(activeMission);
   const showProof = Boolean(
     activeMission &&
       ["verification", "proof_delivered", "mission_blocked"].includes(activeMission.stage)

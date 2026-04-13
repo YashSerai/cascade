@@ -1,4 +1,4 @@
-import type { ChangedFile, CheckArtifact, ExecutionPlan, MissionBrief } from "../../../shared/types";
+import type { ChangedFile, CheckArtifact, ExecutionPlan, MissionBrief, PullRequestDraft, ScreenshotArtifact } from "../../../shared/types";
 
 export interface PlannedEdit {
   path: string;
@@ -30,5 +30,7 @@ export interface ExecutionProvider {
     summary: string;
     blockers: string[];
     nextSteps: string[];
+    pullRequestDraft: PullRequestDraft;
+    screenshots: ScreenshotArtifact[];
   }>;
 }

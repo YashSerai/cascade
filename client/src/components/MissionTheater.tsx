@@ -27,9 +27,10 @@ export function MissionTheater({
 }: MissionTheaterProps) {
   const stageInfo = stagePresentation[mission.stage];
   const selectedCrew = getCrewSpotlight(selectedCrewRole, brief, mission);
+  const selectedRoleFocus = brief.routePlan.roleFocus[selectedCrewRole];
   const timeline = mission.artifacts.logs.slice(-8);
   const primaryBlocker = mission.artifacts.blockers[0] ?? "";
-  const fileNodes = buildFileNodes(brief, mission);
+  const fileNodes = buildFileNodes(brief, mission, selectedRoleFocus.filePaths);
 
   return (
     <section className="theater-section" id="mission-theater">
@@ -71,8 +72,8 @@ export function MissionTheater({
               <strong>{stageInfo.chapter}</strong>
             </div>
             <div className="theater-stat">
-              <span>Primary surface</span>
-              <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
+              <span>Route focus</span>
+              <strong>{brief.routePlan.routeHeadline}</strong>
             </div>
           </div>
 
@@ -96,6 +97,13 @@ export function MissionTheater({
                 <p>{selectedCrew.audienceBody}</p>
               </article>
             </div>
+
+            <article className="role-focus-rail">
+              <span>Why this role matters now</span>
+              <strong>{selectedRoleFocus.headline}</strong>
+              <p>{selectedRoleFocus.successSignal}</p>
+              <small>Repo elements: {selectedRoleFocus.filePaths.map((item) => humanizeSurfaceLabel(item)).join(", ")}</small>
+            </article>
           </article>
 
           <article className="mission-timeline">
@@ -144,7 +152,7 @@ export function MissionTheater({
                 <span>Agent deck</span>
                 <strong>Who owns the mission right now</strong>
               </div>
-              <small>Tap a role to refocus the theater</small>
+              <small>Tap a role to change the active lens, highlighted files, and route narrative</small>
             </div>
 
             <div className="agent-deck-grid">
@@ -163,6 +171,7 @@ export function MissionTheater({
                   >
                     <span className="agent-node-status">{spotlight.statusLabel}</span>
                     <strong>{spotlight.name}</strong>
+                    <em>{brief.routePlan.roleFocus[role].headline}</em>
                     <small>{mission.agents[role].latestAction}</small>
                     <div className="agent-progress-track" aria-hidden="true">
                       <div className="agent-progress-fill" style={{ width: `${mission.agents[role].progress}%` }} />
@@ -179,7 +188,7 @@ export function MissionTheater({
                 <span>Surface graph</span>
                 <strong>Files the mission is reading and changing</strong>
               </div>
-              <small>{fileNodes.length} visible surfaces</small>
+              <small>{selectedCrew.name} is currently centered on {selectedRoleFocus.filePaths.length} file surface(s)</small>
             </div>
 
             <div className="orbit-stage">
@@ -233,11 +242,11 @@ export function MissionTheater({
   );
 }
 
-function buildFileNodes(brief: MissionBrief, mission: MissionRun) {
-  const importantFiles = brief.repoScan.importantFiles.slice(0, 6);
+function buildFileNodes(brief: MissionBrief, mission: MissionRun, selectedPaths: string[]) {
+  const routeFiles = brief.routePlan.fileMap.map((entry) => entry.path);
   const targetedFiles = mission.artifacts.executionPlan?.targetFiles ?? [];
   const changedFiles = mission.artifacts.changedFiles.map((file) => file.path);
-  const uniqueFiles = [...new Set([...changedFiles, ...targetedFiles, ...importantFiles])].slice(0, 6);
+  const uniqueFiles = [...new Set([...changedFiles, ...targetedFiles, ...routeFiles])].slice(0, 6);
   const positions = [
     { x: 15, y: 17, anchorX: 210, anchorY: 126 },
     { x: 70, y: 15, anchorX: 790, anchorY: 118 },
@@ -250,15 +259,19 @@ function buildFileNodes(brief: MissionBrief, mission: MissionRun) {
   return uniqueFiles.map((path, index) => {
     const changed = mission.artifacts.changedFiles.find((file) => file.path === path);
     const targeted = targetedFiles.includes(path);
-    const state = changed ? "changed" : targeted ? "targeted" : "scanned";
+    const routed = brief.routePlan.fileMap.find((entry) => entry.path === path);
+    const state = changed ? "changed" : targeted ? "targeted" : routed ? routed.phase === "verify" ? "verify" : routed.phase === "shape" ? "targeted" : "scanned" : "scanned";
     const position = positions[index] ?? positions[0];
+    const isSelected = selectedPaths.includes(path);
 
     return {
       path,
-      label: state === "changed" ? "Changed" : state === "targeted" ? "Targeted" : "Scanned",
-      state,
+      label:
+        state === "changed" ? "Changed" : state === "targeted" ? "Targeted" : state === "verify" ? "Verification" : "Scanned",
+      state: `${state}${isSelected ? " selected" : ""}`,
       summary:
         changed?.summary ??
+        routed?.reason ??
         (targeted ? "The execution plan is routed through this file." : "This surfaced during repo scan and route framing."),
       ...position
     };

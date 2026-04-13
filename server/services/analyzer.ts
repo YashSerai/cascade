@@ -14,7 +14,63 @@ const analysisSchema = z.object({
   candidateFeatures: z.array(z.string()).min(1),
   acceptanceCriteria: z.array(z.string()).min(1),
   impactedAreas: z.array(z.string()).min(1),
-  implementationBrief: z.string()
+  implementationBrief: z.string(),
+  routePlan: z.object({
+    routeHeadline: z.string(),
+    routeSummary: z.string(),
+    whyThisRoute: z.string(),
+    loadingSteps: z.array(
+      z.object({
+        label: z.string(),
+        detail: z.string()
+      })
+    ).min(3).max(4),
+    journeyMoments: z.array(z.string()).min(3).max(5),
+    proofTargets: z.array(z.string()).min(2).max(4),
+    fileMap: z.array(
+      z.object({
+        path: z.string(),
+        reason: z.string(),
+        phase: z.enum(["scan", "shape", "verify"])
+      })
+    ).min(2).max(6),
+    roleFocus: z.object({
+      pm: z.object({
+        role: z.literal("pm"),
+        headline: z.string(),
+        currentLens: z.string(),
+        repoHook: z.string(),
+        successSignal: z.string(),
+        filePaths: z.array(z.string()).min(1).max(3)
+      }),
+      architect: z.object({
+        role: z.literal("architect"),
+        headline: z.string(),
+        currentLens: z.string(),
+        repoHook: z.string(),
+        successSignal: z.string(),
+        filePaths: z.array(z.string()).min(1).max(3)
+      }),
+      executor: z.object({
+        role: z.literal("executor"),
+        headline: z.string(),
+        currentLens: z.string(),
+        repoHook: z.string(),
+        successSignal: z.string(),
+        filePaths: z.array(z.string()).min(1).max(3)
+      }),
+      qa: z.object({
+        role: z.literal("qa"),
+        headline: z.string(),
+        currentLens: z.string(),
+        repoHook: z.string(),
+        successSignal: z.string(),
+        filePaths: z.array(z.string()).min(1).max(3)
+      })
+    }),
+    prTitle: z.string(),
+    prSummary: z.string()
+  })
 });
 
 const analysisResponseSchema = {
@@ -28,7 +84,64 @@ const analysisResponseSchema = {
     candidateFeatures: { type: "array", items: { type: "string" } },
     acceptanceCriteria: { type: "array", items: { type: "string" } },
     impactedAreas: { type: "array", items: { type: "string" } },
-    implementationBrief: { type: "string" }
+    implementationBrief: { type: "string" },
+    routePlan: {
+      type: "object",
+      properties: {
+        routeHeadline: { type: "string" },
+        routeSummary: { type: "string" },
+        whyThisRoute: { type: "string" },
+        loadingSteps: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              label: { type: "string" },
+              detail: { type: "string" }
+            },
+            required: ["label", "detail"]
+          }
+        },
+        journeyMoments: { type: "array", items: { type: "string" } },
+        proofTargets: { type: "array", items: { type: "string" } },
+        fileMap: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              path: { type: "string" },
+              reason: { type: "string" },
+              phase: { type: "string", enum: ["scan", "shape", "verify"] }
+            },
+            required: ["path", "reason", "phase"]
+          }
+        },
+        roleFocus: {
+          type: "object",
+          properties: {
+            pm: routeRoleFocusSchema("pm"),
+            architect: routeRoleFocusSchema("architect"),
+            executor: routeRoleFocusSchema("executor"),
+            qa: routeRoleFocusSchema("qa")
+          },
+          required: ["pm", "architect", "executor", "qa"]
+        },
+        prTitle: { type: "string" },
+        prSummary: { type: "string" }
+      },
+      required: [
+        "routeHeadline",
+        "routeSummary",
+        "whyThisRoute",
+        "loadingSteps",
+        "journeyMoments",
+        "proofTargets",
+        "fileMap",
+        "roleFocus",
+        "prTitle",
+        "prSummary"
+      ]
+    }
   },
   required: [
     "missionTitle",
@@ -39,7 +152,8 @@ const analysisResponseSchema = {
     "candidateFeatures",
     "acceptanceCriteria",
     "impactedAreas",
-    "implementationBrief"
+    "implementationBrief",
+    "routePlan"
   ]
 };
 
@@ -115,6 +229,7 @@ function buildAnalysisPrompt(input: {
     `Support level: ${input.repoScan.supportLevel}`,
     `Support reason: ${input.repoScan.supportReason}`,
     `Important files: ${input.repoScan.importantFiles.join(", ") || "none detected"}`,
+    `Important file summaries: ${input.repoScan.importantFileSummaries.map((entry) => `${entry.path} => ${entry.summary}`).join(" | ") || "none detected"}`,
     `Known risks: ${input.repoScan.risks.join(" | ")}`,
     "",
     input.mode === "discover"
@@ -127,7 +242,23 @@ function buildAnalysisPrompt(input: {
       ? "In Discover Mode, extract pain points, rank likely features, choose one mission, explain why, and keep acceptance criteria concrete."
       : "In Mission Mode, clarify the direct request into a mission title, objective, acceptance criteria, impacted areas, and an implementation brief.",
     "Keep the copy tight and demo-ready. missionTitle: 8 words max with no brand prefix. selectedObjective: 10 words max. rationale: 2 short sentences max. Each pain point and acceptance criterion: 12 words max. implementationBrief: 18 words max.",
+    "Route plan requirements: loadingSteps should describe what analyze appears to be doing while it clones/reads/plans. journeyMoments should feel like a cinematic but repo-grounded mission arc. roleFocus must be specific to repo files or surfaces. fileMap should mention the files that matter most to this ask. prTitle should read like a clean pull request title.",
     "Avoid invented specifics such as database tables or files that are not grounded in the repo scan.",
     "Impacted areas can refer to file paths or subsystem names."
   ].join("\n");
+}
+
+function routeRoleFocusSchema(role: "pm" | "architect" | "executor" | "qa") {
+  return {
+    type: "object",
+    properties: {
+      role: { type: "string", enum: [role] },
+      headline: { type: "string" },
+      currentLens: { type: "string" },
+      repoHook: { type: "string" },
+      successSignal: { type: "string" },
+      filePaths: { type: "array", items: { type: "string" } }
+    },
+    required: ["role", "headline", "currentLens", "repoHook", "successSignal", "filePaths"]
+  } as const;
 }

@@ -85,6 +85,29 @@ export function TechnicalProofDrawer({ brief, mission, open, onClose }: Technica
           </article>
 
           <article className="drawer-card">
+            <h3>Route plan</h3>
+            <div className="drawer-stack">
+              <p>{brief.routePlan.routeSummary}</p>
+              <div>
+                <strong>Journey moments</strong>
+                <ul className="drawer-bullets">
+                  {brief.routePlan.journeyMoments.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <strong>Proof targets</strong>
+                <ul className="drawer-bullets">
+                  {brief.routePlan.proofTargets.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </article>
+
+          <article className="drawer-card">
             <h3>Changed files</h3>
             <ul className="drawer-bullets">
               {mission.artifacts.changedFiles.length > 0 ? (
@@ -97,6 +120,22 @@ export function TechnicalProofDrawer({ brief, mission, open, onClose }: Technica
                 <li>No changed files yet.</li>
               )}
             </ul>
+          </article>
+
+          <article className="drawer-card">
+            <h3>PR draft</h3>
+            {mission.artifacts.pullRequestDraft ? (
+              <div className="drawer-stack">
+                <p>{mission.artifacts.pullRequestDraft.title}</p>
+                <ul className="drawer-bullets">
+                  {mission.artifacts.pullRequestDraft.checklist.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="empty-state">The PR draft is assembled after execution packages the mission.</p>
+            )}
           </article>
 
           <article className="drawer-card">
@@ -118,8 +157,10 @@ export function TechnicalProofDrawer({ brief, mission, open, onClose }: Technica
           <article className="drawer-card">
             <h3>Important files</h3>
             <ul className="drawer-bullets">
-              {brief.repoScan.importantFiles.map((file) => (
-                <li key={file}>{file}</li>
+              {brief.repoScan.importantFileSummaries.map((file) => (
+                <li key={file.path}>
+                  {file.path} - {file.summary}
+                </li>
               ))}
             </ul>
           </article>

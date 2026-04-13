@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { MissionBrief, MissionMode } from "../../../shared/types";
 import { getSupportPresentation, humanizeSurfaceLabel, modePresentation } from "../presentation";
 
@@ -18,6 +19,21 @@ interface MissionComposerProps {
   onLaunch: () => void;
   onSelectCandidate: (feature: string) => void;
 }
+
+const analyzeLoadingFrames = [
+  {
+    label: "Clone repo",
+    detail: "Pulling the public repo into a temporary workspace so the route can be grounded in real files."
+  },
+  {
+    label: "Read surfaces",
+    detail: "Inspecting the app shell, scripts, and likely change files before the route is shown."
+  },
+  {
+    label: "Lock pseudo-plan",
+    detail: "Turning the repo scan into role focus, proof targets, and a route the room can follow."
+  }
+];
 
 export function MissionComposer(props: MissionComposerProps) {
   const {
@@ -44,15 +60,28 @@ export function MissionComposer(props: MissionComposerProps) {
   const support = brief ? getSupportPresentation(brief.repoScan.supportLevel) : null;
   const routeLaneLabel = liveBrief
     ? liveBrief.modelSelection.provider === "vertex-ai"
-      ? liveBrief.modelSelection.keyMode === "server"
-        ? "Hosted Vertex lane"
-        : "BYOK Gemini lane"
+      ? "Hosted Vertex lane"
       : liveBrief.modelSelection.keyMode === "server"
         ? "Hosted Gemini lane"
         : liveBrief.modelSelection.keyMode === "user"
           ? "BYOK Gemini lane"
           : "Planning lane"
     : "Route appears after analyze";
+  const [loadingFrame, setLoadingFrame] = useState(0);
+  const activeLoadingSteps = brief?.routePlan.loadingSteps?.length ? brief.routePlan.loadingSteps : analyzeLoadingFrames;
+
+  useEffect(() => {
+    if (busyState !== "analyzing") {
+      setLoadingFrame(0);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setLoadingFrame((current) => (current + 1) % activeLoadingSteps.length);
+    }, 900);
+
+    return () => window.clearInterval(timer);
+  }, [busyState, activeLoadingSteps.length]);
 
   return (
     <section className="composer-section" id="mission-composer">
@@ -66,7 +95,7 @@ export function MissionComposer(props: MissionComposerProps) {
         </p>
       </div>
 
-      <div className={`composer-grid ${brief ? "route-ready" : "route-idle"}`}>
+      <div className={`composer-grid ${brief || busyState === "analyzing" ? "route-ready" : "route-idle"}`}>
         <div className="composer-form cinematic-panel">
           <div className="mode-switch">
             {(Object.keys(modePresentation) as MissionMode[]).map((item) => (
@@ -112,39 +141,66 @@ export function MissionComposer(props: MissionComposerProps) {
             />
           </label>
 
-            <div className="action-row">
-              <button type="button" className="primary-button" onClick={onAnalyze} disabled={busyState !== "idle"}>
-                {busyState === "analyzing" ? "Reading the route..." : "Analyze route"}
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={onLaunch}
-                disabled={!isLaunchReady || busyState !== "idle" || needsExecutionKey}
-              >
-                {busyState === "launching"
-                  ? "Starting the run..."
-                  : needsExecutionKey
-                    ? "Add Gemini key to run live"
-                    : "Start live run"}
-              </button>
-            </div>
+          <div className="action-row">
+            <button type="button" className="primary-button" onClick={onAnalyze} disabled={busyState !== "idle"}>
+              {busyState === "analyzing" ? "Locking the route..." : "Analyze route"}
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={onLaunch}
+              disabled={!isLaunchReady || busyState !== "idle" || needsExecutionKey}
+            >
+              {busyState === "launching"
+                ? "Starting the run..."
+                : needsExecutionKey
+                  ? "Add Gemini key to run live"
+                  : "Start live run"}
+            </button>
+          </div>
 
           {needsExecutionKey ? (
             <p className="launch-hint">
-              Analyze works in heuristic mode, but live execution needs BYOK or a hosted server Gemini key.
+              Analyze works in planning mode, but live execution needs BYOK or a hosted server Gemini/Vertex key.
             </p>
           ) : null}
 
           {error ? <p className="error-message">{error}</p> : null}
         </div>
 
-        {brief ? (
+        {busyState === "analyzing" ? (
+          <aside className="composer-readiness cinematic-panel analyzing-route">
+            <div className="readiness-header">
+              <div>
+                <p className="section-tag muted">Route loading</p>
+                <h3>Building a repo-aware route.</h3>
+              </div>
+              <span className="status-pill advisory">Pseudo-plan mode</span>
+            </div>
+
+            <div className="route-loading-pulse">
+              <div className="route-loading-ring" />
+              <div>
+                <span>{activeLoadingSteps[loadingFrame]?.label}</span>
+                <strong>{activeLoadingSteps[loadingFrame]?.detail}</strong>
+              </div>
+            </div>
+
+            <div className="route-step-stack">
+              {activeLoadingSteps.map((step, index) => (
+                <article key={step.label} className={`route-step-card ${index <= loadingFrame ? "active" : ""}`}>
+                  <span>{step.label}</span>
+                  <p>{step.detail}</p>
+                </article>
+              ))}
+            </div>
+          </aside>
+        ) : brief ? (
           <aside className="composer-readiness cinematic-panel revealed-panel">
             <div className="readiness-header">
               <div>
-                <p className="section-tag muted">{liveBrief ? "Route locked" : "Route drafted"}</p>
-                <h3>{brief.selectedObjective}</h3>
+                <p className="section-tag muted">Route locked</p>
+                <h3>{brief.routePlan.routeHeadline}</h3>
               </div>
               <span className={`status-pill ${brief.repoScan.supportLevel}`}>{support?.label}</span>
             </div>
@@ -152,7 +208,7 @@ export function MissionComposer(props: MissionComposerProps) {
             <div className="route-ribbon">
               <span>{routeLaneLabel}</span>
               <strong>{brief.missionTitle}</strong>
-              <small>{brief.rationale}</small>
+              <small>{brief.routePlan.routeSummary}</small>
             </div>
 
             <div className="readiness-grid">
@@ -169,22 +225,33 @@ export function MissionComposer(props: MissionComposerProps) {
               <div className="readiness-tile">
                 <span>Primary surface</span>
                 <strong>{humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience")}</strong>
-                <small>This is where the change should read first.</small>
+                <small>{brief.routePlan.whyThisRoute}</small>
               </div>
               <div className="readiness-tile">
                 <span>Payoff</span>
                 <strong>{brief.acceptanceCriteria[0] ?? "The result should feel clear at a glance."}</strong>
-                <small>{brief.acceptanceCriteria[1] ?? "The reveal should be obvious without reading a diff."}</small>
+                <small>{brief.routePlan.prSummary}</small>
               </div>
             </div>
 
             <div className="readiness-block">
-              <span>Success looks like</span>
+              <span>Journey moments</span>
               <ul>
-                {brief.acceptanceCriteria.slice(0, 3).map((item) => (
+                {brief.routePlan.journeyMoments.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
+            </div>
+
+            <div className="readiness-block">
+              <span>Proof targets</span>
+              <div className="candidate-grid">
+                {brief.routePlan.proofTargets.map((target) => (
+                  <div key={target} className="candidate-button static">
+                    {target}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="readiness-block">
@@ -203,13 +270,13 @@ export function MissionComposer(props: MissionComposerProps) {
             <p className="section-tag muted">Route hidden</p>
             <h3>The route reveal starts after analysis.</h3>
             <p className="readiness-copy">
-              Give Cascade a public GitHub repo and a concrete ask. The route, live theater, and proof vault stay out of
-              the way until they have something real to show.
+              Analyze clones the repo, reads the real app surface, and uses the model output to fill the route cards,
+              role focus, and proof targets.
             </p>
             <div className="placeholder-pills">
-              <span className="signal-pill">Repo scan first</span>
-              <span className="signal-pill">Route locks second</span>
-              <span className="signal-pill">Live run unlocks theater</span>
+              <span className="signal-pill">Clone repo</span>
+              <span className="signal-pill">Lock pseudo-plan</span>
+              <span className="signal-pill">Start run to open theater</span>
             </div>
           </aside>
         )}

@@ -196,18 +196,18 @@ export function getPreviewScenes(stage: MissionStage, brief: MissionBrief): Prev
 
   return [
     {
-      title: "Spot the friction",
-      body: brief.painPoints[0] ?? "Cascade turns scattered signal into one clear mission.",
+      title: brief.routePlan.loadingSteps[0]?.label ?? "Spot the friction",
+      body: brief.routePlan.loadingSteps[0]?.detail ?? brief.painPoints[0] ?? "Cascade turns scattered signal into one clear mission.",
       state: currentIndex >= 1 ? "complete" : "active"
     },
     {
-      title: "Pick the route",
-      body: brief.implementationBrief,
+      title: brief.routePlan.loadingSteps[1]?.label ?? "Pick the route",
+      body: brief.routePlan.loadingSteps[1]?.detail ?? brief.implementationBrief,
       state: currentIndex >= 3 ? "complete" : currentIndex >= 2 ? "active" : "pending"
     },
     {
-      title: "Show the win",
-      body: brief.acceptanceCriteria[0] ?? "The update should feel obvious when it lands.",
+      title: brief.routePlan.loadingSteps[2]?.label ?? "Show the win",
+      body: brief.routePlan.loadingSteps[2]?.detail ?? brief.acceptanceCriteria[0] ?? "The update should feel obvious when it lands.",
       state: stage === "mission_blocked" ? "blocked" : currentIndex >= 4 ? "active" : "pending"
     }
   ];
@@ -270,68 +270,24 @@ export function getDefaultCrewRole(mission: MissionRun): AgentRole {
 export function getCrewSpotlight(role: AgentRole, brief: MissionBrief, mission: MissionRun): CrewSpotlight {
   const agent = mission.agents[role];
   const status = getStatusPresentation(agent.status);
-  const firstOutcome = brief.acceptanceCriteria[0] ?? "The change should feel clearer immediately.";
-  const firstPain = brief.painPoints[0] ?? brief.rationale;
-  const mainSurface = humanizeSurfaceLabel(brief.impactedAreas[0] ?? brief.repoScan.targetPathHint ?? "main experience");
+  const focus = brief.routePlan.roleFocus[role];
   const proofCount = mission.artifacts.checks.length;
 
-  switch (role) {
-    case "pm":
-      return {
-        role,
-        name: agentPresentation[role].name,
-        statusLabel: status.label,
-        statusTone: status.tone,
-        nodeTitle: agentPresentation[role].nodeTitle,
-        summary: agentPresentation[role].summary,
-        detailTitle: "Why this mission",
-        detailBody: brief.rationale,
-        audienceTitle: "What should click",
-        audienceBody: firstPain
-      };
-    case "architect":
-      return {
-        role,
-        name: agentPresentation[role].name,
-        statusLabel: status.label,
-        statusTone: status.tone,
-        nodeTitle: agentPresentation[role].nodeTitle,
-        summary: agentPresentation[role].summary,
-        detailTitle: "Primary change surface",
-        detailBody: `Cascade is centered on ${mainSurface} and the nearby UI that shapes the outcome.`,
-        audienceTitle: "Why this matters",
-        audienceBody: "The update should read as one deliberate move."
-      };
-    case "executor":
-      return {
-        role,
-        name: agentPresentation[role].name,
-        statusLabel: status.label,
-        statusTone: status.tone,
-        nodeTitle: agentPresentation[role].nodeTitle,
-        summary: agentPresentation[role].summary,
-        detailTitle: "Now building",
-        detailBody: brief.implementationBrief,
-        audienceTitle: "What users notice",
-        audienceBody: firstOutcome
-      };
-    case "qa":
-      return {
-        role,
-        name: agentPresentation[role].name,
-        statusLabel: status.label,
-        statusTone: status.tone,
-        nodeTitle: agentPresentation[role].nodeTitle,
-        summary: agentPresentation[role].summary,
-        detailTitle: "How proof gets earned",
-        detailBody:
-          proofCount > 0
-            ? `${proofCount} proof point${proofCount === 1 ? "" : "s"} already back the handoff.`
-            : "Proof is being assembled before the mission closes.",
-        audienceTitle: "What this protects",
-        audienceBody: "The handoff should feel credible at a glance."
-      };
-  }
+  return {
+    role,
+    name: agentPresentation[role].name,
+    statusLabel: status.label,
+    statusTone: status.tone,
+    nodeTitle: agentPresentation[role].nodeTitle,
+    summary: focus.headline,
+    detailTitle: "Current lens",
+    detailBody: focus.currentLens,
+    audienceTitle: role === "qa" && proofCount > 0 ? "Proof status" : "Repo hook",
+    audienceBody:
+      role === "qa" && proofCount > 0
+        ? `${proofCount} proof point${proofCount === 1 ? "" : "s"} captured so far. ${focus.successSignal}`
+        : focus.repoHook
+  };
 }
 
 export function humanizeSurfaceLabel(value: string) {

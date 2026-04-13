@@ -151,7 +151,18 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
   async collectArtifacts(_context: ExecutionContext, _plan: PlanResult, changedFiles: ChangedFile[], checks: CheckArtifact[]) {
     const blockers = checks.filter((check) => check.status === "failed").map((check) => `${check.name} failed. Review the verification output.`);
     const passedChecks = checks.filter((check) => check.status === "passed").map((check) => check.name);
-
+    const pullRequestDraft = {
+      title: _context.brief.routePlan.prTitle || _context.brief.selectedObjective,
+      summary:
+        blockers.length === 0
+          ? _context.brief.routePlan.prSummary
+          : `${_context.brief.routePlan.prSummary} Verification still surfaced blocker details that need a follow-up pass.`,
+      checklist: [
+        `Changed files: ${changedFiles.map((file) => file.path).join(", ") || "none yet"}.`,
+        `Verification: ${checks.map((check) => `${check.name}:${check.status}`).join(", ") || "none recorded"}.`,
+        `Proof targets: ${_context.brief.routePlan.proofTargets.join(" | ")}`
+      ]
+    };
     return {
       summary:
         blockers.length === 0
@@ -167,7 +178,9 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
           : [
               "Inspect the failing command output in the proof bundle.",
               "Use Continue Working to feed the repo state and the blocker back into another coding agent."
-            ]
+            ],
+      pullRequestDraft,
+      screenshots: []
     };
   }
 }

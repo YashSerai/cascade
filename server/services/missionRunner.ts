@@ -127,6 +127,8 @@ export async function runMission(missionId: string, apiKey?: string) {
       artifacts: {
         ...current.artifacts,
         checks,
+        screenshots: collected.screenshots,
+        pullRequestDraft: collected.pullRequestDraft,
         summary: collected.summary,
         blockers: collected.blockers,
         nextSteps: collected.nextSteps

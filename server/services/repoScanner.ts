@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { RepoScan, RepoTarget, SupportLevel } from "../../shared/types";
 import { cloneRepository, safeRemove } from "./github";
-import { listRepoFiles, readJsonIfExists } from "./files";
+import { listRepoFiles, readJsonIfExists, readTextIfExists } from "./files";
 
 interface PackageJsonLike {
   name?: string;
@@ -30,6 +30,7 @@ export async function scanLocalWorkspace(workspace: string, repoTarget: RepoTarg
   const framework = detectFramework(dependencies, files);
   const packageManager = detectPackageManager(packageJson, files);
   const importantFiles = pickImportantFiles(files, repoTarget.targetPath);
+  const importantFileSummaries = await summarizeImportantFiles(workspace, importantFiles);
   const installCommand = packageManager === "npm" ? "npm install --no-audit --no-fund" : undefined;
   const buildCommand = scripts.build ? "npm run build" : undefined;
   const testCommand = scripts.test && scripts.test !== "echo \"Error: no test specified\" && exit 1" ? "npm run test" : undefined;
@@ -55,6 +56,7 @@ export async function scanLocalWorkspace(workspace: string, repoTarget: RepoTarg
     buildCommand,
     testCommand,
     importantFiles,
+    importantFileSummaries,
     risks,
     rootScripts: Object.keys(scripts),
     targetPathHint: repoTarget.targetPath
@@ -135,6 +137,33 @@ function pickImportantFiles(files: string[], targetPath?: string) {
   }
 
   return [...important];
+}
+
+async function summarizeImportantFiles(workspace: string, importantFiles: string[]) {
+  const summaries: RepoScan["importantFileSummaries"] = [];
+
+  for (const file of importantFiles.slice(0, 6)) {
+    const content = await readTextIfExists(path.join(workspace, file));
+    if (!content) {
+      continue;
+    }
+
+    const normalized = content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 6)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .slice(0, 260);
+
+    summaries.push({
+      path: file,
+      summary: normalized || "Readable file with product-facing code."
+    });
+  }
+
+  return summaries;
 }
 
 function detectSupportLevel(input: {
