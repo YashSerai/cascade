@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { ChangedFile, CheckArtifact, ExecutionPlan } from "../../../shared/types";
 import { resolveApiKey, generateStructuredJson } from "../model";
 import { getNpmCommand, readTextIfExists, runCommand, trimOutput, writeFileSafe } from "../files";
-import type { ExecutionContext, ExecutionProvider, PlanResult } from "./provider";
+import type { ExecutionContext, ExecutionProvider, PlanResult, RunChecksOptions } from "./provider";
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
@@ -248,25 +248,36 @@ export class LocalGeminiExecutionProvider implements ExecutionProvider {
     return changedFiles;
   }
 
-  async runChecks(context: ExecutionContext): Promise<CheckArtifact[]> {
+  async runChecks(context: ExecutionContext, options?: RunChecksOptions): Promise<CheckArtifact[]> {
     const checks: CheckArtifact[] = [];
     const npm = getNpmCommand();
-    // Cloud Run sets NODE_ENV=production; npm then skips devDependencies and TypeScript
-    // builds fail without @types/react. Force a dev-capable install for verification.
-    const installArgs = ["install", "--no-audit", "--no-fund", "--include=dev"];
-    const installResult = await runCommand(npm, installArgs, context.workspace, 420000, {
-      env: { ...process.env, NODE_ENV: "development" }
-    });
+    const installCmd = "npm install --no-audit --no-fund --include=dev";
 
-    checks.push({
-      name: "install",
-      status: installResult.ok ? "passed" : "failed",
-      command: "npm install --no-audit --no-fund --include=dev",
-      output: trimOutput(`${installResult.stdout}\n${installResult.stderr}\n${installResult.message ?? ""}`.trim())
-    });
+    if (options?.skipInstall) {
+      checks.push({
+        name: "install",
+        status: "skipped",
+        command: installCmd,
+        output: "Skipped on re-verify; reusing node_modules from the initial install."
+      });
+    } else {
+      // Cloud Run sets NODE_ENV=production; npm then skips devDependencies and TypeScript
+      // builds fail without @types/react. Force a dev-capable install for verification.
+      const installArgs = ["install", "--no-audit", "--no-fund", "--include=dev"];
+      const installResult = await runCommand(npm, installArgs, context.workspace, 420000, {
+        env: { ...process.env, NODE_ENV: "development" }
+      });
 
-    if (!installResult.ok) {
-      return checks;
+      checks.push({
+        name: "install",
+        status: installResult.ok ? "passed" : "failed",
+        command: installCmd,
+        output: trimOutput(`${installResult.stdout}\n${installResult.stderr}\n${installResult.message ?? ""}`.trim())
+      });
+
+      if (!installResult.ok) {
+        return checks;
+      }
     }
 
     const verificationCommand = context.brief.repoScan.buildCommand ? ["run", "build"] : context.brief.repoScan.testCommand ? ["run", "test"] : null;

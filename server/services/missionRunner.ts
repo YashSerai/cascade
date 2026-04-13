@@ -136,7 +136,7 @@ export async function runMission(missionId: string, apiKey?: string) {
           }
         }));
 
-        checks = await provider.runChecks({ workspace, brief: latest.brief, apiKey });
+        checks = await provider.runChecks({ workspace, brief: latest.brief, apiKey }, { skipInstall: true });
         logChecks(missionId, checks);
         repairableFailures = getRepairableFailures(checks);
       } catch (repairError) {
