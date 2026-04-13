@@ -22,6 +22,80 @@ function mergePlanKeyAliases(o: Record<string, unknown>): Record<string, unknown
   return out;
 }
 
+function stringListFromUnknown(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((x) => String(x).trim()).filter(Boolean);
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value
+      .split(/[\n,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function coerceEditEntry(raw: unknown): { path: string; summary: string; content: string } | null {
+  if (!isPlainObject(raw)) {
+    return null;
+  }
+  const pathVal = raw.path ?? raw.file ?? raw.filePath ?? raw.filepath ?? raw.target ?? raw.filename;
+  const summaryVal = raw.summary ?? raw.description ?? raw.change_summary ?? raw.message ?? raw.title;
+  const contentVal = raw.content ?? raw.newContent ?? raw.body ?? raw.code ?? raw.text ?? raw.patch ?? raw.updatedContent;
+  if (typeof pathVal !== "string" || !pathVal.trim()) {
+    return null;
+  }
+  if (typeof contentVal !== "string") {
+    return null;
+  }
+  const summary =
+    typeof summaryVal === "string" && summaryVal.trim() ? summaryVal.trim() : `Update ${pathVal}`;
+  return { path: pathVal.trim(), summary, content: contentVal };
+}
+
+/**
+ * Gemini repair responses often use a single string for verificationStrategy/notes, or alternate edit keys.
+ */
+function coerceLoosePlanFields(o: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...o };
+
+  let vs = stringListFromUnknown(out.verificationStrategy);
+  if (vs.length === 0) {
+    vs = ["npm run build"];
+  }
+  out.verificationStrategy = vs;
+
+  out.notes = stringListFromUnknown(out.notes);
+
+  let tf = stringListFromUnknown(out.targetFiles);
+  if (tf.length === 0 && typeof out.targetFiles === "string") {
+    tf = stringListFromUnknown(out.targetFiles);
+  }
+  if (tf.length > 0) {
+    out.targetFiles = tf.slice(0, 4);
+  }
+
+  if (Array.isArray(out.edits)) {
+    const mapped = out.edits.map(coerceEditEntry).filter((e): e is NonNullable<typeof e> => e !== null);
+    out.edits = mapped;
+  }
+
+  if (typeof out.approach !== "string" || !out.approach.trim()) {
+    out.approach = "Apply conservative fixes to satisfy the mission and passing checks.";
+  } else {
+    out.approach = out.approach.trim();
+  }
+
+  return out;
+}
+
+function finalizePlanObject(value: unknown): unknown {
+  if (!isPlainObject(value)) {
+    return value;
+  }
+  return coerceLoosePlanFields(mergePlanKeyAliases(value));
+}
+
 /**
  * Gemini sometimes nests the plan or returns multiple sibling objects; `coerceModelJsonRoot` may
  * pick the wrong one by key count. Prefer objects that include `edits`, unwrap `plan` / `data`, etc.
@@ -62,10 +136,10 @@ export function normalizePlanPayload(value: unknown): unknown {
       continue;
     }
 
-    return o;
+    return finalizePlanObject(o);
   }
 
-  return v;
+  return isPlainObject(v) ? finalizePlanObject(v) : v;
 }
 
 const planSchema = z.object({

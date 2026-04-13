@@ -37,4 +37,31 @@ describe("normalizePlanPayload", () => {
     expect(out.targetFiles).toEqual(["b.tsx"]);
     expect(out.verificationStrategy).toEqual(["test"]);
   });
+
+  it("coerces verificationStrategy and notes from a single string", () => {
+    const o = {
+      approach: "fix",
+      targetFiles: ["a.tsx"],
+      verificationStrategy: "npm run build",
+      notes: "single note line",
+      edits: [{ path: "a.tsx", summary: "s", content: "x" }]
+    };
+    const out = normalizePlanPayload(o) as Record<string, unknown>;
+    expect(out.verificationStrategy).toEqual(["npm run build"]);
+    expect(out.notes).toEqual(["single note line"]);
+  });
+
+  it("maps alternate edit keys (file, body)", () => {
+    const o = {
+      approach: "a",
+      targetFiles: ["x.tsx"],
+      verificationStrategy: ["build"],
+      notes: [],
+      edits: [{ file: "x.tsx", body: "export {}" }]
+    };
+    const out = normalizePlanPayload(o) as Record<string, unknown>;
+    expect(out.edits).toEqual([
+      expect.objectContaining({ path: "x.tsx", content: "export {}", summary: expect.any(String) })
+    ]);
+  });
 });
