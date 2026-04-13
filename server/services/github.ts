@@ -7,6 +7,15 @@ import type { RepoTarget } from "../../shared/types";
 
 const execFileAsync = promisify(execFile);
 
+function isMissingGitBinary(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "ENOENT"
+  );
+}
+
 export function parseGitHubTarget(inputUrl: string): RepoTarget {
   let url: URL;
 
@@ -64,6 +73,9 @@ export async function cloneRepository(repoTarget: RepoTarget) {
     await execFileAsync("git", args, { timeout: 120000 });
   } catch (error) {
     await safeRemove(workspace);
+    if (isMissingGitBinary(error)) {
+      throw new Error("Hosted runtime is missing the git executable, so repository cloning cannot start.");
+    }
     const message = error instanceof Error ? error.message : "Git clone failed.";
     throw new Error(`Unable to clone the repository. Confirm the repo is public and reachable. ${message}`);
   }
