@@ -26,6 +26,8 @@ export function MissionTheater({
 }: MissionTheaterProps) {
   const stageInfo = stagePresentation[mission.stage];
   const selectedCrew = getCrewSpotlight(selectedCrewRole, brief, mission);
+  const recentLogs = mission.artifacts.logs.slice(-4).reverse();
+  const primaryBlocker = mission.artifacts.blockers[0] ?? "";
 
   return (
     <section className="theater-section" id="mission-theater">
@@ -87,6 +89,37 @@ export function MissionTheater({
             <strong>{brief.acceptanceCriteria[0] ?? "The product should feel clearer immediately."}</strong>
             <small>{stageInfo.pulse}</small>
           </div>
+
+          {primaryBlocker ? (
+            <article className="run-blocker">
+              <span>Blocker</span>
+              <strong>{primaryBlocker}</strong>
+              <p>Clear this and rerun to unlock execution, checks, and proof artifacts.</p>
+            </article>
+          ) : null}
+
+          <article className="run-ledger">
+            <div className="run-ledger-header">
+              <div>
+                <span>Run ledger</span>
+                <strong>What changed in this run</strong>
+              </div>
+              <small>{mission.stage === "objective_received" ? "Waiting for launch" : "Streaming mission state"}</small>
+            </div>
+
+            {recentLogs.length > 0 ? (
+              <div className="run-log-stack">
+                {recentLogs.map((log) => (
+                  <article key={`${log.timestamp}-${log.message}`} className={`run-log ${log.level}`}>
+                    <span>{log.level}</span>
+                    <p>{log.message}</p>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-state">Once the live run starts, stage changes and blockers will land here.</p>
+            )}
+          </article>
         </div>
 
         <div className="constellation-panel">

@@ -41,6 +41,7 @@ export function MissionComposer(props: MissionComposerProps) {
   const support = getSupportPresentation(brief.repoScan.supportLevel);
   const modeCopy = modePresentation[mode];
   const isLaunchReady = liveBrief !== null;
+  const needsExecutionKey = isLaunchReady && liveBrief?.modelSelection.keyMode === "none" && !apiKey.trim();
 
   return (
     <section className="composer-section" id="mission-composer">
@@ -100,14 +101,29 @@ export function MissionComposer(props: MissionComposerProps) {
             />
           </label>
 
-          <div className="action-row">
-            <button type="button" className="primary-button" onClick={onAnalyze} disabled={busyState !== "idle"}>
-              {busyState === "analyzing" ? "Reading the route..." : "Analyze route"}
-            </button>
-            <button type="button" className="secondary-button" onClick={onLaunch} disabled={!isLaunchReady || busyState !== "idle"}>
-              {busyState === "launching" ? "Starting the run..." : "Start live run"}
-            </button>
-          </div>
+            <div className="action-row">
+              <button type="button" className="primary-button" onClick={onAnalyze} disabled={busyState !== "idle"}>
+                {busyState === "analyzing" ? "Reading the route..." : "Analyze route"}
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={onLaunch}
+                disabled={!isLaunchReady || busyState !== "idle" || needsExecutionKey}
+              >
+                {busyState === "launching"
+                  ? "Starting the run..."
+                  : needsExecutionKey
+                    ? "Add Gemini key to run live"
+                    : "Start live run"}
+              </button>
+            </div>
+
+          {needsExecutionKey ? (
+            <p className="launch-hint">
+              Analyze works in heuristic mode, but live execution needs BYOK or a hosted server Gemini key.
+            </p>
+          ) : null}
 
           {error ? <p className="error-message">{error}</p> : null}
         </div>

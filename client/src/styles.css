@@ -650,6 +650,12 @@ a {
   line-height: 1.55;
 }
 
+.launch-hint {
+  margin: 14px 0 0;
+  color: var(--brass);
+  line-height: 1.55;
+}
+
 .status-pill.supported {
   border-color: rgba(156, 225, 198, 0.22);
   color: var(--mint);
@@ -787,6 +793,89 @@ a {
 .signal-banner {
   display: grid;
   gap: 0.45rem;
+}
+
+.run-blocker,
+.run-ledger {
+  position: relative;
+  z-index: 1;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.run-blocker {
+  border-color: rgba(255, 111, 111, 0.26);
+  background:
+    radial-gradient(circle at top left, rgba(255, 111, 111, 0.1), transparent 42%),
+    rgba(255, 255, 255, 0.035);
+}
+
+.run-blocker span,
+.run-ledger-header span,
+.run-log span {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: rgba(244, 242, 236, 0.58);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.run-blocker strong,
+.run-ledger-header strong {
+  display: block;
+  line-height: 1.32;
+}
+
+.run-blocker p,
+.run-ledger-header small,
+.run-log p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.run-ledger {
+  display: grid;
+  gap: 14px;
+}
+
+.run-ledger-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.run-log-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.run-log {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.run-log.info span {
+  color: var(--plasma);
+}
+
+.run-log.warn span {
+  color: var(--brass);
+}
+
+.run-log.error {
+  border-color: rgba(255, 111, 111, 0.24);
+}
+
+.run-log.error span {
+  color: #ffb8b8;
 }
 
 .signal-banner strong {

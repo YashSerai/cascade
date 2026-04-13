@@ -51,10 +51,14 @@ export default function App() {
     theaterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [activeMission?.id]);
 
-  const visibleMission = activeMission ?? seededMission;
   const visibleBrief = brief ?? activeMission?.brief ?? seededBrief;
+  const previewMission = useMemo(
+    () => buildPreviewMission(visibleBrief, Boolean(brief), busyState === "analyzing"),
+    [visibleBrief, brief, busyState]
+  );
+  const visibleMission = activeMission ?? previewMission;
   const liveBrief = brief ?? activeMission?.brief ?? null;
-  const historyVisible = history.length > 0 ? history : [seededMission];
+  const historyVisible = history.length > 0 ? history : [previewMission];
 
   const missionProgress = useMemo(() => getMissionProgress(visibleMission.stage), [visibleMission.stage]);
   const chapters = useMemo(() => getChapterStates(visibleMission.stage), [visibleMission.stage]);
@@ -84,6 +88,12 @@ export default function App() {
 
   async function handleLaunch() {
     if (!liveBrief) {
+      return;
+    }
+
+    if (liveBrief.modelSelection.keyMode === "none" && !apiKey.trim()) {
+      setError("Live run needs a Gemini key. Paste BYOK to execute the mission, or add a server key to Cloud Run.");
+      composerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 
@@ -202,4 +212,102 @@ export default function App() {
 function mergeHistory(history: MissionRun[], mission: MissionRun) {
   const next = [mission, ...history.filter((entry) => entry.id !== mission.id)];
   return next.slice(0, 6);
+}
+
+function buildPreviewMission(brief: MissionBrief, routeLocked: boolean, isAnalyzing: boolean): MissionRun {
+  const now = new Date().toISOString();
+
+  if (routeLocked) {
+    return {
+      id: "preview-route-locked",
+      createdAt: now,
+      updatedAt: now,
+      stage: "plan_locked",
+      brief,
+      queuePosition: 0,
+      agents: {
+        pm: { role: "pm", status: "done", latestAction: "Turned the ask into a concrete mission brief.", progress: 100 },
+        architect: { role: "architect", status: "done", latestAction: "Mapped the change surface and locked the route.", progress: 100 },
+        executor: { role: "executor", status: "idle", latestAction: "Waiting for a live run and execution key.", progress: 0 },
+        qa: { role: "qa", status: "idle", latestAction: "Waiting for execution before proof can be assembled.", progress: 0 }
+      },
+      artifacts: {
+        changedFiles: [],
+        checks: [],
+        screenshots: [],
+        logs: [
+          {
+            timestamp: now,
+            level: "info",
+            message: "Route locked. Start the live run to move from planning into execution."
+          }
+        ],
+        summary: "Route preview is ready. Start live run to generate a real patch, checks, and proof.",
+        blockers: [],
+        nextSteps: ["Start live run with BYOK or a configured server key."]
+      }
+    };
+  }
+
+  if (isAnalyzing) {
+    return {
+      ...seededMission,
+      id: "preview-analyzing",
+      createdAt: now,
+      updatedAt: now,
+      stage: "recon",
+      brief,
+      agents: {
+        pm: { role: "pm", status: "done", latestAction: "Parsed the ask and framed the mission.", progress: 100 },
+        architect: { role: "architect", status: "active", latestAction: "Scanning the repo and locking the likely change surface.", progress: 52 },
+        executor: { role: "executor", status: "idle", latestAction: "Waiting for route lock.", progress: 0 },
+        qa: { role: "qa", status: "idle", latestAction: "Waiting for proof-worthy execution.", progress: 0 }
+      },
+      artifacts: {
+        changedFiles: [],
+        checks: [],
+        screenshots: [],
+        logs: [
+          {
+            timestamp: now,
+            level: "info",
+            message: "Analyze route is in progress. Repo scan and mission framing are underway."
+          }
+        ],
+        summary: "Cascade is reading the repo and shaping the route.",
+        blockers: [],
+        nextSteps: []
+      }
+    };
+  }
+
+  return {
+    ...seededMission,
+    id: "preview-idle",
+    createdAt: now,
+    updatedAt: now,
+    stage: "objective_received",
+    brief,
+    agents: {
+      pm: { role: "pm", status: "active", latestAction: "Waiting for the ask to be analyzed.", progress: 18 },
+      architect: { role: "architect", status: "idle", latestAction: "No route locked yet.", progress: 0 },
+      executor: { role: "executor", status: "idle", latestAction: "Standing by for a real mission.", progress: 0 },
+      qa: { role: "qa", status: "idle", latestAction: "Proof unlocks after a live run.", progress: 0 }
+    },
+    artifacts: {
+      changedFiles: [],
+      checks: [],
+      screenshots: [],
+      logs: [
+        {
+          timestamp: now,
+          level: "info",
+          message: "Waiting for analyze route. The theater becomes live once a mission is locked."
+        }
+      ],
+      summary: "Analyze a repo to replace this preview with a route-locked mission.",
+      blockers: [],
+      nextSteps: []
+    }
+  };
 }
