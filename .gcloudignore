@@ -1,0 +1,14 @@
+.git
+.gitignore
+.gcloudignore
+node_modules
+dist
+.env
+.env.*
+coverage
+*.log
+*.tsbuildinfo
+BuildSignal_Detailed_Build_Guide.md
+demo-targets/
+tools/browser-proof/
+assets/screenshots/generated/
