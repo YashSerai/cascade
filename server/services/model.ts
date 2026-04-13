@@ -96,7 +96,7 @@ export async function generateStructuredJson<T>(input: {
       });
 
       const raw = extractJson(response.text ?? "");
-      const parsed = input.schema.parse(unwrapIfArray(JSON.parse(raw)));
+      const parsed = input.schema.parse(coerceModelJsonRoot(JSON.parse(raw)));
 
       return {
         data: parsed,
@@ -118,11 +118,49 @@ export async function generateStructuredJson<T>(input: {
   throw lastError instanceof Error ? lastError : new Error("Gemini failed to return a valid response.");
 }
 
-function unwrapIfArray(value: unknown): unknown {
-  if (Array.isArray(value) && value.length === 1 && typeof value[0] === "object" && value[0] !== null) {
-    return value[0];
+/**
+ * Gemini sometimes returns JSON as a top-level array: one object, multiple objects,
+ * or nested arrays like [[{...}]]. Zod schemas expect a single object.
+ * - Unwrap single-element arrays (including nested) until we hit a non-array or multiple roots.
+ * - If multiple plain objects appear at the same level, keep the one with the most keys
+ *   (usually the full brief vs a fragment or duplicate wrapper).
+ */
+export function coerceModelJsonRoot(value: unknown): unknown {
+  let current: unknown = value;
+  const maxDepth = 12;
+
+  for (let depth = 0; depth < maxDepth; depth++) {
+    if (!Array.isArray(current)) {
+      return current;
+    }
+
+    const arr = current;
+    if (arr.length === 0) {
+      return current;
+    }
+
+    const plainObjects = arr.filter(
+      (item): item is Record<string, unknown> =>
+        item !== null && typeof item === "object" && !Array.isArray(item)
+    );
+
+    if (plainObjects.length === 0) {
+      if (arr.length === 1) {
+        current = arr[0];
+        continue;
+      }
+      return current;
+    }
+
+    if (plainObjects.length === 1) {
+      current = plainObjects[0];
+      continue;
+    }
+
+    return plainObjects.reduce((a, b) => (Object.keys(a).length >= Object.keys(b).length ? a : b));
   }
-  return value;
+
+  return current;
 }
 
 function extractJson(raw: string) {
@@ -194,7 +232,7 @@ async function generateStructuredJsonViaVertexApi<T>(input: {
           .trim() ?? "";
 
       const raw = extractJson(rawText);
-      const parsed = input.schema.parse(unwrapIfArray(JSON.parse(raw)));
+      const parsed = input.schema.parse(coerceModelJsonRoot(JSON.parse(raw)));
 
       return {
         data: parsed,
